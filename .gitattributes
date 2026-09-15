@@ -1,0 +1,8 @@
+# Store and check out text files with LF: shell scripts and Dockerfiles run inside Linux containers / on the VPS,
+# and CRLF line endings would break them.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf

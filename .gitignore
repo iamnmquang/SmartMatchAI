@@ -1,0 +1,42 @@
+# ---- Secrets ----
+.env
+.env.*
+!.env.example
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# ---- Jupyter ----
+.ipynb_checkpoints/
+
+# ---- Data: reproducible from code + config + seed ----
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# ---- ML artifacts: commit policy decided in Phase 7 ----
+ml/models/*
+!ml/models/.gitkeep
+
+# ---- Frontend ----
+node_modules/
+dist/
+
+# ---- Logs ----
+*.log
+
+# ---- IDE / OS ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
