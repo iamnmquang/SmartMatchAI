@@ -247,6 +247,7 @@ smartmatch-ai/
 │   │   └── rag/                  Ingest, retrieve, citations (P11)
 │   ├── tests/                    Viết trong từng phase; hoàn thiện ở P16
 │   └── requirements.txt          (P8–P9)
+├── worklog-overview/             Tổng kết công việc theo ngày (YYYY-MM-DD.md)
 ├── knowledge/                    Tài liệu policy cho RAG (P11)
 ├── frontend/                     React + Vite + TypeScript (P14)
 ├── notebooks/                    01_eda.ipynb — EDA trên tập train (P3)

@@ -42,6 +42,7 @@ mà không làm xấu guardrail metrics (xem [PRD §8](docs/product-requirements
 | [EDA notebook](notebooks/01_eda.ipynb) | Chất lượng dữ liệu, phân phối, outlier, confounding, selection bias, feature importance sơ bộ | 3 |
 | [Evaluation](docs/evaluation.md) | Protocol đánh giá offline, định nghĩa metric, kết quả baseline (Random, Nearest Driver, Weighted rule, Oracle) | 4 |
 | [Master prompt](docs/master-prompt.md) | Yêu cầu gốc của project (nguyên văn) — đối chiếu phạm vi, quy tắc và quy trình theo phase | — |
+| [Worklog](worklog-overview/) | Tổng kết công việc theo ngày — [2026-09-15](worklog-overview/2026-09-15.md): Phase 0–4 | — |
 
 ## Roadmap
 
