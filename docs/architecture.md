@@ -2,12 +2,12 @@
 
 | | |
 |---|---|
-| Version | 0.1 |
-| Phase | 0 — Product Definition |
+| Version | 0.2 |
+| Phase | 0 — Product Definition; cập nhật ở Phase 1 |
 | Status | Draft. Các mục đánh dấu **Proposed** sẽ được chốt ở phase tương ứng. |
 | Last updated | 2026-09-15 |
 
-Tài liệu liên quan: [Product Requirements](product-requirements.md).
+Tài liệu liên quan: [Product Requirements](product-requirements.md) · [Research](research.md).
 
 ---
 
@@ -270,7 +270,7 @@ Version cụ thể được pin khi cài đặt ở từng phase (không ghi ver
 | Database | PostgreSQL 16 (Docker) | Relational, SQL analytics tốt, hỗ trợ pgvector | SQLite (không phù hợp multi-container/production) |
 | Cache / queue | **Không dùng Redis** | Matching là sync, dữ liệu nhỏ; chưa có nhu cầu đo được | Thêm khi có bằng chứng: cache analytics nặng, rate limit nhiều instance |
 | Data / ML | pandas, NumPy, scikit-learn | Chuẩn cho tabular | Polars (nhanh hơn, ít tài liệu ML hơn) |
-| Model | **Proposed:** XGBoost `XGBClassifier` → P(accept); fallback `HistGradientBoostingClassifier` — chốt ở Phase 1 | Mạnh cho tabular, nhanh, có sẵn feature contribution (`pred_contribs`) để giải thích | LightGBM (tương đương); `XGBRanker` / Learning-to-Rank (xem Phase 1); deep learning (không cần) |
+| Model | **Accepted (Phase 1):** pointwise XGBoost `XGBClassifier` → P(accept), sort giảm dần; Logistic Regression làm mốc tuyến tính; fallback `HistGradientBoostingClassifier` | Sort theo P(accept) tối ưu MSR dưới giả định offer tuần tự; mạnh cho tabular; có sẵn TreeSHAP (`pred_contribs`) để giải thích — xem [research.md §6](research.md) | LightGBM (tương đương); `XGBRanker` (ablation ở Phase 5–6); deep learning; optimization-based (future work) |
 | Serialization | **Proposed:** định dạng native của XGBoost + metadata JSON; joblib cho preprocessing của scikit-learn nếu có — chốt ở Phase 7 | Native format ổn định giữa các version hơn pickle | joblib/pickle cho toàn bộ (dễ vỡ khi đổi version thư viện) |
 | Explanation | **Proposed:** reason từ feature contribution + template — chốt ở Phase 7 | Deterministic, rẻ, không hallucinate | LLM tự viết reason (chậm, tốn tiền, có thể bịa) |
 | LLM | `LLMProvider` interface → `OpenAIProvider`, `MockLLMProvider`; model chọn qua env | Đổi provider/model không sửa application; test offline không tốn tiền | Gọi SDK trực tiếp khắp code (khoá chặt vào vendor) |
@@ -316,7 +316,7 @@ Nếu chọn pgvector, "vector-db" nằm chung container PostgreSQL.
 | ADR-003 | LLM chỉ truy cập dữ liệu qua predefined tools, không raw SQL | Accepted | 0 |
 | ADR-004 | Provider abstraction cho LLM và embeddings | Accepted | 0 |
 | ADR-005 | Offline evaluation bằng simulator: cùng booking test, cùng mô hình outcome ẩn, cùng random numbers | Proposed | 2, 6 |
-| ADR-006 | XGBoost pointwise P(accept) để ranking | Proposed | 1 |
+| ADR-006 | Pointwise P(accept) với XGBoost để ranking; Learning-to-Rank chỉ là ablation | Accepted | 1 |
 | ADR-007 | Reason deterministic từ model, không do LLM sinh | Proposed | 7 |
 | ADR-008 | pgvector thay vì Chroma | Proposed | 11 |
 | ADR-009 | Nginx serve React static build, không chạy Node ở production | Proposed | 15 |

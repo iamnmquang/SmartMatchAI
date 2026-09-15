@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Version | 0.1 |
+| Version | 0.2 |
 | Phase | 0 — Product Definition |
 | Status | Draft — chờ review |
 | Owner | @iamnmquang |
@@ -325,13 +325,15 @@ Nếu H1 không đạt, evaluation report ghi đúng như vậy.
 
 | # | Câu hỏi | Chốt ở |
 |---|---|---|
-| Q1 | Pointwise classification (P(accept)) hay Learning-to-Rank? | Phase 1 |
+| Q1 | ~~Pointwise classification (P(accept)) hay Learning-to-Rank?~~ **Đã chốt:** pointwise P(accept) + XGBoost; Learning-to-Rank là ablation — xem [research.md](research.md) | Phase 1 ✅ |
 | Q2 | Score cuối chỉ là P(accept) hay kết hợp cancellation/ETA? | Phase 5–6 |
 | Q3 | "Hôm nay" nghĩa là gì với dữ liệu synthetic tĩnh (ngày mới nhất trong dataset, hay sinh dữ liệu tương đối theo ngày hiện tại)? | Phase 8, 10 |
 | Q4 | Matching chạy từ UI thì outcome (accepted/cancelled) đến từ đâu khi không có tài xế thật: mô phỏng bằng simulator hay chỉ lưu recommendation? | Phase 8–9 |
 | Q5 | Authentication: API key tĩnh hay JWT login cho admin? | Phase 9 |
 | Q6 | Vector store: pgvector hay Chroma (đề xuất: pgvector)? | Phase 11 |
 | Q7 | Commit model artifact vào git hay train trong bước build? | Phase 7, 15 |
+| Q8 | Training labels chỉ có cho tài xế đã được offer (giống log thực tế, cần logging policy có exploration) hay có cho mọi candidate? | Phase 2 |
+| Q9 | Có thêm baseline phụ (weighted rule score) và dòng Oracle (upper bound từ mô hình ẩn) vào evaluation không? | Phase 4, 6 |
 
 ---
 

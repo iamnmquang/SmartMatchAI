@@ -8,7 +8,7 @@ Mini production AI product (mô phỏng): **xếp hạng tài xế cho booking b
 
 ## Status
 
-**Phase 0 — Product Definition: hoàn thành.** README đầy đủ (kết quả, screenshots, demo) sẽ được viết ở Phase 20.
+**Phase 1 — Research: hoàn thành.** README đầy đủ (kết quả, screenshots, demo) sẽ được viết ở Phase 20.
 
 ## Ý tưởng
 
@@ -37,6 +37,7 @@ mà không làm xấu guardrail metrics (xem [PRD §8](docs/product-requirements
 |---|---|---|
 | [Product Requirements](docs/product-requirements.md) | Problem, personas, user journeys, MVP, FR/NFR, KPIs, trade-offs, risks | 0 |
 | [Architecture](docs/architecture.md) | Components, flows, repository structure, tech stack, decision log | 0 |
+| [Research](docs/research.md) | Problem formulation, related work, so sánh 6 hướng matching, chọn baseline và ML approach, experiment design | 1 |
 | [Data policy](data/README.md) | Nguồn dữ liệu, quy tắc, cách generate | 0, 2 |
 
 ## Roadmap
@@ -44,7 +45,7 @@ mà không làm xấu guardrail metrics (xem [PRD §8](docs/product-requirements
 | Phase | Tên | Status |
 |---|---|---|
 | 0 | Product Definition | ✅ Done |
-| 1 | Research | ⬜ |
+| 1 | Research | ✅ Done |
 | 2 | Synthetic Dataset | ⬜ |
 | 3 | EDA | ⬜ |
 | 4 | Baseline (Nearest Driver) | ⬜ |
