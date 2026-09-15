@@ -8,7 +8,7 @@ Mini production AI product (mô phỏng): **xếp hạng tài xế cho booking b
 
 ## Status
 
-**Phase 2 — Synthetic Dataset: hoàn thành.** README đầy đủ (kết quả, screenshots, demo) sẽ được viết ở Phase 20.
+**Phase 3 — Exploratory Data Analysis: hoàn thành.** README đầy đủ (kết quả, screenshots, demo) sẽ được viết ở Phase 20.
 
 ## Ý tưởng
 
@@ -37,8 +37,9 @@ mà không làm xấu guardrail metrics (xem [PRD §8](docs/product-requirements
 |---|---|---|
 | [Product Requirements](docs/product-requirements.md) | Problem, personas, user journeys, MVP, FR/NFR, KPIs, trade-offs, risks | 0 |
 | [Architecture](docs/architecture.md) | Components, flows, repository structure, tech stack, decision log | 0 |
-| [Research](docs/research.md) | Problem formulation, related work, so sánh 6 hướng matching, chọn baseline và ML approach, experiment design | 1 |
+| [Research](docs/research.md) | Problem formulation, related work, so sánh 6 hướng matching, chọn baseline và ML approach, experiment design, EDA findings | 1, 3 |
 | [Data](data/README.md) | Data policy, cách generate, schema, mô hình sinh dữ liệu, thống kê | 0, 2 |
+| [EDA notebook](notebooks/01_eda.ipynb) | Chất lượng dữ liệu, phân phối, outlier, confounding, selection bias, feature importance sơ bộ | 3 |
 
 ## Roadmap
 
@@ -47,7 +48,7 @@ mà không làm xấu guardrail metrics (xem [PRD §8](docs/product-requirements
 | 0 | Product Definition | ✅ Done |
 | 1 | Research | ✅ Done |
 | 2 | Synthetic Dataset | ✅ Done |
-| 3 | EDA | ⬜ |
+| 3 | EDA | ✅ Done |
 | 4 | Baseline (Nearest Driver) | ⬜ |
 | 5 | Train ML Model | ⬜ |
 | 6 | Evaluation & Benchmarking | ⬜ |
@@ -97,6 +98,9 @@ pip install -r requirements-dev.txt
 ```bash
 python -m ml.data.generate           # Phase 2: sinh dữ liệu synthetic → data/raw/, data/oracle/
 pytest                               # chạy test
+
+# Phase 3: chạy lại EDA từ đầu đến cuối (hoặc mở notebook bằng Jupyter / VS Code với kernel .venv)
+jupyter nbconvert --to notebook --execute --inplace notebooks/01_eda.ipynb
 ```
 
 Các bước tiếp theo sẽ được bổ sung theo từng phase.

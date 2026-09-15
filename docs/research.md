@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Version | 0.1 |
-| Phase | 1 — Research (phần EDA findings được bổ sung ở Phase 3) |
+| Version | 0.2 |
+| Phase | 1 — Research; §9 EDA findings: Phase 3 |
 | Status | Done — chờ review |
 | Last updated | 2026-09-15 |
 
@@ -371,6 +371,135 @@ Mỗi ablation chỉ thay đổi **một** yếu tố; cùng split, cùng seed.
 6. Feature lịch sử tài xế là giá trị **trước** cửa sổ mô phỏng (hoặc tính as-of).
 7. Mô hình **huỷ chuyến** ẩn riêng để tính Cancellation Rate.
 8. Không PII; seed cố định; kích thước cấu hình được.
+
+## 9. EDA findings (Phase 3)
+
+Nguồn: [notebooks/01_eda.ipynb](../notebooks/01_eda.ipynb). Phạm vi: **chỉ tập train** theo `ml/data/splits.py`
+(2026-06-01 → 2026-07-10: 71,863 booking = 71.9%; 558,334 candidate; 108,050 logged offers). Không đọc `data/oracle/`.
+
+> **Lưu ý về tính độc lập.** Simulator và danh sách feature ứng viên do cùng một người thiết kế, nên việc EDA "tìm lại" được cấu trúc
+> của mô hình sinh dữ liệu **không phải bằng chứng độc lập**. Giá trị của phần này là luyện quy trình EDA và nhận diện các bẫy
+> (confounding, selection bias, leakage) sẽ gặp trong dữ liệu thật — nơi không ai biết mô hình sinh dữ liệu.
+
+### 9.1 Chất lượng dữ liệu
+
+| Kiểm tra | Kết quả |
+|---|---|
+| Trùng khoá (drivers, bookings, candidates) | 0 |
+| Structural missing | `offer_rank`, `accepted` trống ở 80.65% dòng candidate (= không được offer); `cancelled` trống ở 89.59% (= không được offer hoặc không nhận). Khớp 100% với logic của log |
+| Missing thật | `rating`: 292 tài xế (1.46%), tất cả có 0–4 chuyến → missing có thông tin |
+| Hai cột idle time khác nghĩa | `drivers.idle_time_min` là snapshot hiện tại (cho demo); `candidates.idle_time_min` là giá trị tại thời điểm booking → training phải dùng cột của `candidates` |
+
+### 9.2 Nhãn & cấu trúc log
+
+| | |
+|---|---|
+| Acceptance rate (logged offers) | 0.538 → cân bằng |
+| Cancellation rate (chuyến đã nhận) | 0.133 → lệch; chỉ liên quan nếu mô hình hoá việc huỷ (PRD Q2) |
+| Tỷ lệ dòng candidate có nhãn | 19.4% |
+| Acceptance theo lượt offer 1 / 2 / 3 — policy `nearest` | 0.702 / 0.398 / 0.214 |
+| Acceptance theo lượt offer 1 / 2 / 3 — policy `explore` | 0.415 / 0.355 / 0.313 |
+| Acceptance theo ngày | mean 0.540, std 0.046, min 0.435, max 0.613; không thấy xu hướng trong 40 ngày |
+
+### 9.3 Phân phối & outlier
+
+- Tài xế **được offer** có ETA và distance ngắn hơn hẳn toàn bộ candidate (offered: median ETA 10.3 phút, distance 2.26 km) —
+  selection bias của log nhìn thấy trực tiếp trên histogram.
+- Mật độ candidate theo distance tăng tuyến tính tới 5 km: hệ quả hình học của phân bố đều trong hình tròn (vòng ngoài có diện tích lớn hơn).
+- `rating` lệch trái (p5 4.35, p50 4.66) và dồn tại 5.0 do bị chặn; `cancellation_rate` lệch phải với nhiều giá trị 0;
+  `completed_trips` gần log-normal kèm một cụm tài xế mới.
+- Outlier theo IQR: `idle_time_min` 6.0% vượt fence 27.9 phút (max 180); `completed_trips` 8.2% vượt 1,687; `cancellation_rate` 4.6%
+  vượt 0.23 (max 0.70); ETA 0.95% vượt 30.7 phút; `trip_km` 0.25%; `rating` 0.73% dưới 4.20.
+  Đây là giá trị hợp lệ của phân phối lệch, không phải lỗi → **giữ lại**. Tree model không nhạy; Logistic Regression dùng `log1p`.
+
+### 9.4 Quan hệ một biến với việc nhận chuyến
+
+| Feature | Quan hệ quan sát được (acceptance rate theo bin) |
+|---|---|
+| `estimated_eta_min` | Giảm mạnh, dạng chữ S: ≈ 0.92 ở 1–2 phút, ≈ 0.78 ở 7–8 phút, dốc nhất khoảng 8–16 phút, ≈ 0.01 ở 30 phút |
+| `distance_km` | Giảm (≈ 0.88 → 0.14) |
+| `idle_time_min` | Tăng rồi bão hoà (≈ 0.47 → 0.69) |
+| `trip_km` | Tăng, dạng lõm (≈ 0.38 ở ~1.6 km → 0.61 ở ~17 km) |
+| `acceptance_rate` (lịch sử) | Tăng đơn điệu (≈ 0.28 → 0.76) |
+| `cancellation_rate`, `rating`, `completed_trips` | Gần như phẳng quanh mức chung |
+| `weather` | clear 0.588 · rain 0.468 · heavy_rain 0.233 |
+| `traffic_level` | low 0.802 · medium 0.676 · high 0.336 |
+| `time_of_day` | night 0.716 · morning_peak 0.459 · midday 0.666 · evening_peak 0.417 · evening 0.689 |
+| `passenger_type` | individual 0.541 · group 0.482 |
+| `vehicle_type`, `is_weekend` | Không khác biệt đáng kể (car_4 0.539 vs car_7 0.534; weekday 0.536 vs weekend 0.545) |
+
+### 9.5 Confounding & Simpson's paradox
+
+So sánh acceptance rate **trong cùng khoảng ETA** để tách tác động của biến ngữ cảnh khỏi tác động của ETA:
+
+| Biến | Chênh lệch chung | Trong cùng khoảng ETA | Kết luận |
+|---|---|---|---|
+| `traffic_level` | low 0.802 vs high 0.336 (median ETA 5.7 vs 15.2 phút) | low ≈ medium (0.892 vs 0.873 ở 0–6 phút; 0.774 vs 0.773 ở 6–10); high thấp hơn medium ≈ 0.07–0.12 | Phần lớn chênh lệch đi qua ETA; traffic cao vẫn còn tác động riêng |
+| `time_of_day` | peak 0.417–0.459 vs midday 0.666 (median ETA 12.4–13.4 vs 7.7 phút) | Chênh lệch giữa các khung giờ thu hẹp còn ≈ 0.05–0.10 | Chủ yếu do ETA |
+| `weather` | heavy_rain 0.233 vs clear 0.588 | heavy_rain thấp hơn clear 0.15 (0–6 phút), 0.21 (6–10), 0.27 (10–15) | Tác động riêng, **lớn dần theo ETA** → dấu hiệu tương tác weather × ETA |
+| `passenger_type` | group 0.482 < individual 0.541 | group **cao hơn** ở mọi khoảng ETA (0.805 vs 0.742 ở 6–10 phút; 0.550 vs 0.474 ở 10–15) | **Simpson's paradox:** group chỉ có median 2 candidate phù hợp (vs 7) → tài xế xa hơn (median ETA 13.2 vs 10.1 phút) |
+
+### 9.6 Selection bias
+
+| Nhóm offer đầu tiên | Offers | Acceptance | Median ETA | Median candidate / booking |
+|---|---|---|---|---|
+| Policy `nearest` | 56,428 | 0.702 | 6.96 phút | 7 |
+| Policy `explore` (ngẫu nhiên) | 14,371 | 0.415 | 14.20 phút | 7 |
+| `explore`, trúng tài xế gần nhất | 2,780 | 0.606 | 8.65 phút | 4 |
+
+- Cùng là "tài xế gần nhất" nhưng acceptance 0.606 vs 0.702: chọn ngẫu nhiên trúng người gần nhất dễ xảy ra hơn ở booking có ít candidate,
+  nơi người gần nhất vẫn ở xa hơn. → **Một điều kiện lọc tưởng vô hại cũng tạo ra bias.**
+- Offer đầu tiên ngẫu nhiên theo hạng khoảng cách trong booking: 0.606 (gần nhất) → 0.492 → 0.426 → 0.359 → ≈ 0.31–0.32 (hạng 5–7)
+  → 0.282 (hạng ≥ 8). Khoảng cách là tín hiệu chính nhưng không tuyệt đối: tài xế gần thứ hai vẫn nhận gần một nửa số lần.
+  Đây là **dấu hiệu có không gian** để xếp hạng tốt hơn Nearest Driver — **chưa phải bằng chứng** ML sẽ thắng.
+- `offer_rank` và `logging_policy` gắn chặt với nhãn vì là sản phẩm của log (lượt sau chỉ xảy ra khi lượt trước bị từ chối)
+  → **không được làm feature**.
+
+### 9.7 Tương quan & feature importance sơ bộ
+
+Spearman trên logged offers:
+
+- ETA ↔ distance 0.90; `distance_minus_min_km` ↔ `distance_rank_in_booking` 0.97 (gần như trùng nhau);
+  `pickup_to_trip_ratio` ↔ distance 0.72 và ↔ `trip_km` −0.64.
+- Feature lịch sử của tài xế gần như không tương quan với feature không gian → tín hiệu bổ sung. `rating` ↔ `cancellation_rate` −0.34.
+- Với `accepted`: ETA −0.585 · distance −0.494 · `pickup_to_trip_ratio` −0.432 · `distance_minus_min_km` −0.376 ·
+  `distance_rank_in_booking` −0.369 · `acceptance_rate` +0.245 · `idle_time_min` +0.119 · `trip_km` +0.108; các feature còn lại có |ρ| ≤ 0.03.
+
+Importance một biến (60,000 logged offers lấy mẫu từ tập train):
+
+| Feature | Mutual information | Univariate ROC-AUC | Chiều |
+|---|---|---|---|
+| `estimated_eta_min` | 0.201 | 0.837 | cao hơn → ít nhận hơn |
+| `distance_km` | 0.132 | 0.785 | cao hơn → ít nhận hơn |
+| `pickup_to_trip_ratio` | 0.102 | 0.749 | cao hơn → ít nhận hơn |
+| `distance_rank_in_booking` | 0.071 | 0.690 | cao hơn → ít nhận hơn |
+| `distance_minus_min_km` | 0.070 | 0.694 | cao hơn → ít nhận hơn |
+| `traffic_level` | 0.070 | 0.693 | cao hơn → ít nhận hơn |
+| `trip_km` | 0.046 | 0.560 | cao hơn → nhận nhiều hơn |
+| `acceptance_rate` | 0.032 | 0.642 | cao hơn → nhận nhiều hơn |
+| `hour` | 0.030 | 0.505 | không đơn điệu |
+| `time_of_day` | 0.030 | — (nominal) | — |
+| `weather` | 0.017 | 0.577 | xấu hơn → ít nhận hơn |
+| `idle_time_min` | 0.008 | 0.569 | cao hơn → nhận nhiều hơn |
+| `cancellation_rate`, `completed_trips`, `rating` | ≤ 0.003 | 0.49–0.51 | ≈ 0 |
+| `passenger_type`, `has_rating`, `is_weekend`, `vehicle_type` | < 0.001 | ≈ 0.50 | ≈ 0 |
+
+Hai thước đo không luôn cùng thứ tự: `hour` có AUC ≈ 0.5 nhưng mutual information 0.030 (quan hệ không đơn điệu — hai khung cao điểm);
+`passenger_type` có mutual information ≈ 0 dù có tác động rõ khi so trong cùng khoảng ETA (§9.5). Importance một biến chỉ là điểm xuất phát.
+
+### 9.8 Hệ quả cho Phase 4–5
+
+| # | Quyết định / việc cần làm | Căn cứ |
+|---|---|---|
+| 1 | Nearest Driver sẽ là baseline mạnh: khoảng cách / ETA là tín hiệu một biến mạnh nhất | §9.4, §9.7 |
+| 2 | ML phải khai thác phần tín hiệu khoảng cách không có: lịch sử tài xế, idle time, độ dài chuyến, thời tiết / traffic và tương tác với ETA | §9.4, §9.5 |
+| 3 | Feature ứng viên cho Phase 5: `estimated_eta_min`, `distance_km`, `pickup_to_trip_ratio`, `trip_km`, `acceptance_rate`, `idle_time_min`, `traffic_level`, `weather`, `time_of_day`, và **một** trong hai relative feature (ρ = 0.97) | §9.7 |
+| 4 | Không loại `rating`, `cancellation_rate`, `completed_trips`, `passenger_type` chỉ vì importance một biến thấp — để ablation quyết định | §9.5 (`passenger_type`) |
+| 5 | Cấm làm feature: `offer_rank`, `logging_policy`, `cancelled`, `drivers.idle_time_min` (snapshot hiện tại), mọi thứ trong `data/oracle/` | §9.1, §9.6 |
+| 6 | Preprocessing: XGBoost dùng NaN native cho `rating`; Logistic Regression cần impute + `has_rating`, one-hot cho categorical, `log1p` cho `completed_trips` và `idle_time_min`, chuẩn hoá | §9.1, §9.3 |
+| 7 | Không cần resampling hay class weight cho `accepted` | §9.2 |
+| 8 | Báo cáo metric theo booking (NDCG@5, Hit@1) bên cạnh ROC-AUC: traffic, weather, time là tín hiệu chung của cả booking — giúp AUC toàn cục nhưng không giúp xếp hạng trong booking | §9.4, §6.2 |
+| 9 | Vùng tài xế xa chủ yếu có nhãn từ 20% explore → model kém chắc chắn hơn ở vùng này; kiểm tra calibration theo khoảng ETA ở Phase 6 | §9.6 |
 
 ---
 

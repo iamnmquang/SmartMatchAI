@@ -1,2 +1,7 @@
 -r ml/requirements.txt
 pytest==9.1.1
+
+# Notebooks (EDA)
+matplotlib==3.11.2
+ipykernel==7.3.0
+nbconvert==7.17.1

@@ -273,6 +273,7 @@ Oracle AUC là **cận trên** cho mọi model vì oracle biết cả đặc đi
 | Đọc `data/oracle/` trong feature engineering, training hoặc serving | Oracle leakage |
 | Dùng `cancelled` làm feature để dự đoán `accepted` | Chỉ có sau khi đã nhận |
 | Dùng `offer_rank`, `logging_policy` làm feature | Là sản phẩm của log, không tồn tại khi xếp hạng một booking mới |
+| Dùng `drivers.idle_time_min` cho dữ liệu lịch sử | Đó là snapshot *hiện tại* cho demo; giá trị tại thời điểm booking nằm ở `candidates.idle_time_min` |
 | Chia train/test ngẫu nhiên theo dòng | Candidate của cùng booking lọt sang cả hai tập; phải chia theo thời gian ở cấp booking |
 
 ## 9. Giả định & giới hạn

@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Version | 0.3 |
-| Phase | 0 — Product Definition; cập nhật ở Phase 1, 2 |
+| Version | 0.4 |
+| Phase | 0 — Product Definition; cập nhật ở Phase 1, 2, 3 |
 | Status | Draft. Các mục đánh dấu **Proposed** sẽ được chốt ở phase tương ứng. |
 | Last updated | 2026-09-15 |
 
@@ -154,7 +154,7 @@ Ràng buộc runtime (Phase 12–13): max iterations, timeout cho từng tool v�
 Vấn đề cốt lõi khi so sánh hai policy trên dữ liệu log: ta chỉ biết tài xế **đã được offer** có nhận hay không. Không thể biết tài xế khác
 *sẽ* phản ứng thế nào nếu được offer (counterfactual). Trong thực tế, câu hỏi này cần A/B test online.
 
-Vì dữ liệu là synthetic, simulator có **mô hình xác suất ẩn** sinh ra hành vi tài xế. Thiết kế đánh giá (Proposed, chốt ở Phase 2 và 6):
+Vì dữ liệu là synthetic, simulator có **mô hình xác suất ẩn** sinh ra hành vi tài xế. Thiết kế đánh giá (ADR-005 — Accepted; dữ liệu: Phase 2, evaluation: Phase 6):
 
 1. Model ML chỉ học từ **nhãn đã sample** trong tập train — không bao giờ nhìn thấy mô hình ẩn.
 2. Với mỗi booking trong tập test, Baseline và ML mỗi bên đưa ra một thứ tự tài xế.
@@ -227,7 +227,7 @@ smartmatch-ai/
 ├── ml/                           Pipeline offline
 │   ├── requirements.txt          Dependencies (pinned)
 │   ├── tests/                    Test cho pipeline ML (từ P2)
-│   ├── data/                     Generator + mô hình hành vi ẩn của simulator (P2)
+│   ├── data/                     Generator, mô hình hành vi ẩn (P2), time-based split (P3)
 │   ├── features/                 Feature engineering, dùng chung train & serve (P5)
 │   ├── training/                 Train, tuning (P5)
 │   ├── evaluation/               Metrics, Baseline vs ML (P4, P6)
@@ -249,7 +249,7 @@ smartmatch-ai/
 │   └── requirements.txt          (P8–P9)
 ├── knowledge/                    Tài liệu policy cho RAG (P11)
 ├── frontend/                     React + Vite + TypeScript (P14)
-├── notebooks/                    EDA (P3)
+├── notebooks/                    01_eda.ipynb — EDA trên tập train (P3)
 ├── scripts/                      CLI: generate data, seed DB, ingest knowledge, benchmark
 ├── docker/                       Dockerfiles, Nginx config (P15, P18)
 ├── docker-compose.yml            (P8: Postgres cho dev → P15: full stack)
@@ -276,6 +276,7 @@ Version cụ thể được pin khi cài đặt ở từng phase (không ghi ver
 | Cache / queue | **Không dùng Redis** | Matching là sync, dữ liệu nhỏ; chưa có nhu cầu đo được | Thêm khi có bằng chứng: cache analytics nặng, rate limit nhiều instance |
 | Data / ML | pandas, NumPy, scikit-learn | Chuẩn cho tabular | Polars (nhanh hơn, ít tài liệu ML hơn) |
 | Data format | **Accepted (Phase 2):** Parquet (pyarrow) | Giữ kiểu dữ liệu (datetime, category, nullable), nén tốt, đọc nhanh | CSV (dễ mở nhưng mất kiểu dữ liệu, file lớn hơn) |
+| Notebook / EDA | **Accepted (Phase 3):** Jupyter notebook (ipykernel), kiểm chứng bằng `nbconvert --execute`; matplotlib | Đảm bảo notebook chạy lại được từ đầu đến cuối; ít dependency | seaborn (thêm dependency), plotly (notebook rất nặng) |
 | Model | **Accepted (Phase 1):** pointwise XGBoost `XGBClassifier` → P(accept), sort giảm dần; Logistic Regression làm mốc tuyến tính; fallback `HistGradientBoostingClassifier` | Sort theo P(accept) tối ưu MSR dưới giả định offer tuần tự; mạnh cho tabular; có sẵn TreeSHAP (`pred_contribs`) để giải thích — xem [research.md §6](research.md) | LightGBM (tương đương); `XGBRanker` (ablation ở Phase 5–6); deep learning; optimization-based (future work) |
 | Serialization | **Proposed:** định dạng native của XGBoost + metadata JSON; joblib cho preprocessing của scikit-learn nếu có — chốt ở Phase 7 | Native format ổn định giữa các version hơn pickle | joblib/pickle cho toàn bộ (dễ vỡ khi đổi version thư viện) |
 | Explanation | **Proposed:** reason từ feature contribution + template — chốt ở Phase 7 | Deterministic, rẻ, không hallucinate | LLM tự viết reason (chậm, tốn tiền, có thể bịa) |
@@ -327,6 +328,7 @@ Nếu chọn pgvector, "vector-db" nằm chung container PostgreSQL.
 | ADR-008 | pgvector thay vì Chroma | Proposed | 11 |
 | ADR-009 | Nginx serve React static build, không chạy Node ở production | Proposed | 15 |
 | ADR-010 | Synthetic data dạng snapshot theo từng booking; sự thật ẩn tách riêng trong `data/oracle/` | Accepted | 2 |
+| ADR-011 | Chia train / validation / test theo thời gian ở cấp booking (40 / 8 / 8 ngày, `ml/data/splits.py`); EDA chỉ dùng tập train | Accepted | 3 |
 
 ---
 
