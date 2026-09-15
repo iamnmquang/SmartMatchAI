@@ -1,0 +1,730 @@
+{
+  "experiment": "phase4-baselines",
+  "data": {
+    "generator_version": "1.0.0",
+    "seed": 42
+  },
+  "settings": {
+    "max_offers": 3,
+    "reference_policy": "nearest_driver",
+    "bootstrap": {
+      "method": "paired percentile bootstrap over bookings",
+      "resamples": 1000,
+      "seed": 2026
+    },
+    "random_policy_seed": 7
+  },
+  "policies": {
+    "random": "Sanity floor: random offer order within the candidate set.",
+    "nearest_driver": "Baseline and reference: closest candidate by straight-line distance first, ties by driver_id.",
+    "weighted_rule": "Secondary baseline: hand-set operations heuristic, weights fixed before evaluation.",
+    "oracle": "Upper bound, not attainable: order by the simulator's true acceptance probability."
+  },
+  "weighted_rule": {
+    "weights": {
+      "estimated_eta_min": -0.2,
+      "acceptance_rate": 2.0,
+      "cancellation_rate": -2.0,
+      "rating": 0.5,
+      "idle_time_min": 0.02
+    },
+    "rating_prior": 4.7,
+    "idle_cap_min": 30.0
+  },
+  "splits": {
+    "validation": {
+      "n_bookings": 14191,
+      "n_bookings_with_candidates": 13977,
+      "n_candidate_rows": 111260,
+      "policies": {
+        "random": {
+          "metrics": {
+            "matching_success_rate": 0.710662,
+            "acceptance_rate": 0.377532,
+            "avg_eta_matched_min": 10.899027,
+            "cancellation_rate": 0.166187,
+            "completed_rate": 0.592559,
+            "first_offer_acceptance_rate": 0.416828,
+            "avg_offers_per_booking_with_candidates": 1.911211,
+            "p50_eta_matched_min": 10.57,
+            "p90_eta_matched_min": 17.03
+          },
+          "bootstrap": {
+            "matching_success_rate": {
+              "ci95": [
+                0.703051,
+                0.717851
+              ],
+              "diff_vs_reference_ci95": [
+                -0.133042,
+                -0.121485
+              ]
+            },
+            "acceptance_rate": {
+              "ci95": [
+                0.371452,
+                0.383208
+              ],
+              "diff_vs_reference_ci95": [
+                -0.226208,
+                -0.211934
+              ]
+            },
+            "avg_eta_matched_min": {
+              "ci95": [
+                10.808705,
+                10.985685
+              ],
+              "diff_vs_reference_ci95": [
+                3.43012,
+                3.609328
+              ]
+            },
+            "cancellation_rate": {
+              "ci95": [
+                0.158828,
+                0.173598
+              ],
+              "diff_vs_reference_ci95": [
+                0.036269,
+                0.050919
+              ]
+            },
+            "completed_rate": {
+              "ci95": [
+                0.58452,
+                0.600382
+              ],
+              "diff_vs_reference_ci95": [
+                -0.149604,
+                -0.135225
+              ]
+            },
+            "first_offer_acceptance_rate": {
+              "ci95": [
+                0.408645,
+                0.424972
+              ],
+              "diff_vs_reference_ci95": [
+                -0.293897,
+                -0.275787
+              ]
+            },
+            "avg_offers_per_booking_with_candidates": {
+              "ci95": [
+                1.897459,
+                1.926021
+              ],
+              "diff_vs_reference_ci95": [
+                0.470708,
+                0.499106
+              ]
+            }
+          }
+        },
+        "nearest_driver": {
+          "metrics": {
+            "matching_success_rate": 0.837925,
+            "acceptance_rate": 0.596399,
+            "avg_eta_matched_min": 7.378059,
+            "cancellation_rate": 0.122698,
+            "completed_rate": 0.735114,
+            "first_offer_acceptance_rate": 0.701367,
+            "avg_offers_per_booking_with_candidates": 1.426486,
+            "p50_eta_matched_min": 6.62,
+            "p90_eta_matched_min": 12.78
+          },
+          "bootstrap": {
+            "matching_success_rate": {
+              "ci95": [
+                0.831795,
+                0.844127
+              ],
+              "diff_vs_reference_ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "acceptance_rate": {
+              "ci95": [
+                0.587623,
+                0.604892
+              ],
+              "diff_vs_reference_ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "avg_eta_matched_min": {
+              "ci95": [
+                7.307551,
+                7.450179
+              ],
+              "diff_vs_reference_ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "cancellation_rate": {
+              "ci95": [
+                0.116913,
+                0.128613
+              ],
+              "diff_vs_reference_ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "completed_rate": {
+              "ci95": [
+                0.727715,
+                0.742515
+              ],
+              "diff_vs_reference_ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "first_offer_acceptance_rate": {
+              "ci95": [
+                0.69355,
+                0.708536
+              ],
+              "diff_vs_reference_ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "avg_offers_per_booking_with_candidates": {
+              "ci95": [
+                1.414728,
+                1.439011
+              ],
+              "diff_vs_reference_ci95": [
+                0.0,
+                0.0
+              ]
+            }
+          }
+        },
+        "weighted_rule": {
+          "metrics": {
+            "matching_success_rate": 0.846452,
+            "acceptance_rate": 0.629989,
+            "avg_eta_matched_min": 7.828439,
+            "cancellation_rate": 0.118382,
+            "completed_rate": 0.746248,
+            "first_offer_acceptance_rate": 0.746226,
+            "avg_offers_per_booking_with_candidates": 1.36417,
+            "p50_eta_matched_min": 7.17,
+            "p90_eta_matched_min": 13.359
+          },
+          "bootstrap": {
+            "matching_success_rate": {
+              "ci95": [
+                0.840533,
+                0.852655
+              ],
+              "diff_vs_reference_ci95": [
+                0.006272,
+                0.010713
+              ]
+            },
+            "acceptance_rate": {
+              "ci95": [
+                0.621297,
+                0.638965
+              ],
+              "diff_vs_reference_ci95": [
+                0.029701,
+                0.03756
+              ]
+            },
+            "avg_eta_matched_min": {
+              "ci95": [
+                7.759825,
+                7.903511
+              ],
+              "diff_vs_reference_ci95": [
+                0.421416,
+                0.479464
+              ]
+            },
+            "cancellation_rate": {
+              "ci95": [
+                0.11272,
+                0.12423
+              ],
+              "diff_vs_reference_ci95": [
+                -0.008312,
+                -2.3e-05
+              ]
+            },
+            "completed_rate": {
+              "ci95": [
+                0.738849,
+                0.753296
+              ],
+              "diff_vs_reference_ci95": [
+                0.007258,
+                0.014729
+              ]
+            },
+            "first_offer_acceptance_rate": {
+              "ci95": [
+                0.739215,
+                0.753579
+              ],
+              "diff_vs_reference_ci95": [
+                0.039761,
+                0.050333
+              ]
+            },
+            "avg_offers_per_booking_with_candidates": {
+              "ci95": [
+                1.352293,
+                1.375082
+              ],
+              "diff_vs_reference_ci95": [
+                -0.069461,
+                -0.055531
+              ]
+            }
+          }
+        },
+        "oracle": {
+          "metrics": {
+            "matching_success_rate": 0.852371,
+            "acceptance_rate": 0.656678,
+            "avg_eta_matched_min": 8.62171,
+            "cancellation_rate": 0.137814,
+            "completed_rate": 0.734902,
+            "first_offer_acceptance_rate": 0.778422,
+            "avg_offers_per_booking_with_candidates": 1.317879,
+            "p50_eta_matched_min": 8.12,
+            "p90_eta_matched_min": 14.305
+          },
+          "bootstrap": {
+            "matching_success_rate": {
+              "ci95": [
+                0.846452,
+                0.85815
+              ],
+              "diff_vs_reference_ci95": [
+                0.01205,
+                0.01663
+              ]
+            },
+            "acceptance_rate": {
+              "ci95": [
+                0.646928,
+                0.665479
+              ],
+              "diff_vs_reference_ci95": [
+                0.055063,
+                0.064899
+              ]
+            },
+            "avg_eta_matched_min": {
+              "ci95": [
+                8.549774,
+                8.697454
+              ],
+              "diff_vs_reference_ci95": [
+                1.195458,
+                1.288057
+              ]
+            },
+            "cancellation_rate": {
+              "ci95": [
+                0.131345,
+                0.144002
+              ],
+              "diff_vs_reference_ci95": [
+                0.009379,
+                0.02048
+              ]
+            },
+            "completed_rate": {
+              "ci95": [
+                0.727433,
+                0.742442
+              ],
+              "diff_vs_reference_ci95": [
+                -0.005148,
+                0.004799
+              ]
+            },
+            "first_offer_acceptance_rate": {
+              "ci95": [
+                0.771202,
+                0.78525
+              ],
+              "diff_vs_reference_ci95": [
+                0.070486,
+                0.083432
+              ]
+            },
+            "avg_offers_per_booking_with_candidates": {
+              "ci95": [
+                1.307549,
+                1.32945
+              ],
+              "diff_vs_reference_ci95": [
+                -0.116898,
+                -0.100154
+              ]
+            }
+          }
+        }
+      }
+    },
+    "test": {
+      "n_bookings": 13946,
+      "n_bookings_with_candidates": 13788,
+      "n_candidate_rows": 111046,
+      "policies": {
+        "random": {
+          "metrics": {
+            "matching_success_rate": 0.734978,
+            "acceptance_rate": 0.394322,
+            "avg_eta_matched_min": 10.745164,
+            "cancellation_rate": 0.161268,
+            "completed_rate": 0.616449,
+            "first_offer_acceptance_rate": 0.427256,
+            "avg_offers_per_booking_with_candidates": 1.885263,
+            "p50_eta_matched_min": 10.47,
+            "p90_eta_matched_min": 16.831
+          },
+          "bootstrap": {
+            "matching_success_rate": {
+              "ci95": [
+                0.727662,
+                0.741435
+              ],
+              "diff_vs_reference_ci95": [
+                -0.127565,
+                -0.115804
+              ]
+            },
+            "acceptance_rate": {
+              "ci95": [
+                0.388114,
+                0.400055
+              ],
+              "diff_vs_reference_ci95": [
+                -0.234079,
+                -0.219043
+              ]
+            },
+            "avg_eta_matched_min": {
+              "ci95": [
+                10.656103,
+                10.829102
+              ],
+              "diff_vs_reference_ci95": [
+                3.374238,
+                3.548997
+              ]
+            },
+            "cancellation_rate": {
+              "ci95": [
+                0.154361,
+                0.167812
+              ],
+              "diff_vs_reference_ci95": [
+                0.034949,
+                0.049678
+              ]
+            },
+            "completed_rate": {
+              "ci95": [
+                0.608488,
+                0.624267
+              ],
+              "diff_vs_reference_ci95": [
+                -0.146137,
+                -0.130783
+              ]
+            },
+            "first_offer_acceptance_rate": {
+              "ci95": [
+                0.418069,
+                0.435366
+              ],
+              "diff_vs_reference_ci95": [
+                -0.304389,
+                -0.28562
+              ]
+            },
+            "avg_offers_per_booking_with_candidates": {
+              "ci95": [
+                1.871003,
+                1.900146
+              ],
+              "diff_vs_reference_ci95": [
+                0.476259,
+                0.505479
+              ]
+            }
+          }
+        },
+        "nearest_driver": {
+          "metrics": {
+            "matching_success_rate": 0.856159,
+            "acceptance_rate": 0.620969,
+            "avg_eta_matched_min": 7.284527,
+            "cancellation_rate": 0.118677,
+            "completed_rate": 0.754553,
+            "first_offer_acceptance_rate": 0.722005,
+            "avg_offers_per_booking_with_candidates": 1.394546,
+            "p50_eta_matched_min": 6.53,
+            "p90_eta_matched_min": 12.65
+          },
+          "bootstrap": {
+            "matching_success_rate": {
+              "ci95": [
+                0.849921,
+                0.861968
+              ],
+              "diff_vs_reference_ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "acceptance_rate": {
+              "ci95": [
+                0.611678,
+                0.629559
+              ],
+              "diff_vs_reference_ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "avg_eta_matched_min": {
+              "ci95": [
+                7.216856,
+                7.355065
+              ],
+              "diff_vs_reference_ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "cancellation_rate": {
+              "ci95": [
+                0.112954,
+                0.124688
+              ],
+              "diff_vs_reference_ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "completed_rate": {
+              "ci95": [
+                0.747311,
+                0.761799
+              ],
+              "diff_vs_reference_ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "first_offer_acceptance_rate": {
+              "ci95": [
+                0.713808,
+                0.729784
+              ],
+              "diff_vs_reference_ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "avg_offers_per_booking_with_candidates": {
+              "ci95": [
+                1.382307,
+                1.406946
+              ],
+              "diff_vs_reference_ci95": [
+                0.0,
+                0.0
+              ]
+            }
+          }
+        },
+        "weighted_rule": {
+          "metrics": {
+            "matching_success_rate": 0.864262,
+            "acceptance_rate": 0.654201,
+            "avg_eta_matched_min": 7.746024,
+            "cancellation_rate": 0.11159,
+            "completed_rate": 0.767819,
+            "first_offer_acceptance_rate": 0.765086,
+            "avg_offers_per_booking_with_candidates": 1.336234,
+            "p50_eta_matched_min": 7.08,
+            "p90_eta_matched_min": 13.188
+          },
+          "bootstrap": {
+            "matching_success_rate": {
+              "ci95": [
+                0.858452,
+                0.869857
+              ],
+              "diff_vs_reference_ci95": [
+                0.00588,
+                0.010326
+              ]
+            },
+            "acceptance_rate": {
+              "ci95": [
+                0.645111,
+                0.663432
+              ],
+              "diff_vs_reference_ci95": [
+                0.029151,
+                0.036919
+              ]
+            },
+            "avg_eta_matched_min": {
+              "ci95": [
+                7.675736,
+                7.818234
+              ],
+              "diff_vs_reference_ci95": [
+                0.431892,
+                0.49424
+              ]
+            },
+            "cancellation_rate": {
+              "ci95": [
+                0.106182,
+                0.117316
+              ],
+              "diff_vs_reference_ci95": [
+                -0.011131,
+                -0.003251
+              ]
+            },
+            "completed_rate": {
+              "ci95": [
+                0.760718,
+                0.774991
+              ],
+              "diff_vs_reference_ci95": [
+                0.00932,
+                0.017283
+              ]
+            },
+            "first_offer_acceptance_rate": {
+              "ci95": [
+                0.758067,
+                0.772256
+              ],
+              "diff_vs_reference_ci95": [
+                0.037851,
+                0.048388
+              ]
+            },
+            "avg_offers_per_booking_with_candidates": {
+              "ci95": [
+                1.324506,
+                1.347695
+              ],
+              "diff_vs_reference_ci95": [
+                -0.065049,
+                -0.051673
+              ]
+            }
+          }
+        },
+        "oracle": {
+          "metrics": {
+            "matching_success_rate": 0.868493,
+            "acceptance_rate": 0.679648,
+            "avg_eta_matched_min": 8.566409,
+            "cancellation_rate": 0.132431,
+            "completed_rate": 0.753478,
+            "first_offer_acceptance_rate": 0.7962,
+            "avg_offers_per_booking_with_candidates": 1.292501,
+            "p50_eta_matched_min": 8.03,
+            "p90_eta_matched_min": 14.08
+          },
+          "bootstrap": {
+            "matching_success_rate": {
+              "ci95": [
+                0.862756,
+                0.874231
+              ],
+              "diff_vs_reference_ci95": [
+                0.01011,
+                0.014556
+              ]
+            },
+            "acceptance_rate": {
+              "ci95": [
+                0.669744,
+                0.689192
+              ],
+              "diff_vs_reference_ci95": [
+                0.054194,
+                0.062905
+              ]
+            },
+            "avg_eta_matched_min": {
+              "ci95": [
+                8.495145,
+                8.643233
+              ],
+              "diff_vs_reference_ci95": [
+                1.2356,
+                1.326044
+              ]
+            },
+            "cancellation_rate": {
+              "ci95": [
+                0.126397,
+                0.138089
+              ],
+              "diff_vs_reference_ci95": [
+                0.008634,
+                0.018945
+              ]
+            },
+            "completed_rate": {
+              "ci95": [
+                0.746019,
+                0.76108
+              ],
+              "diff_vs_reference_ci95": [
+                -0.005882,
+                0.003587
+              ]
+            },
+            "first_offer_acceptance_rate": {
+              "ci95": [
+                0.789283,
+                0.802742
+              ],
+              "diff_vs_reference_ci95": [
+                0.068248,
+                0.080135
+              ]
+            },
+            "avg_offers_per_booking_with_candidates": {
+              "ci95": [
+                1.281645,
+                1.30354
+              ],
+              "diff_vs_reference_ci95": [
+                -0.109807,
+                -0.094252
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

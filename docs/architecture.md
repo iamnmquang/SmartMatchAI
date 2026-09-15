@@ -230,7 +230,7 @@ smartmatch-ai/
 │   ├── data/                     Generator, mô hình hành vi ẩn (P2), time-based split (P3)
 │   ├── features/                 Feature engineering, dùng chung train & serve (P5)
 │   ├── training/                 Train, tuning (P5)
-│   ├── evaluation/               Metrics, Baseline vs ML (P4, P6)
+│   ├── evaluation/               Policies, offline dispatch replay, metrics, bootstrap; results/ (P4, P6)
 │   ├── inference/                predict.py (P7)
 │   └── models/                   Model artifacts + metadata (P7)
 ├── backend/
@@ -329,6 +329,7 @@ Nếu chọn pgvector, "vector-db" nằm chung container PostgreSQL.
 | ADR-009 | Nginx serve React static build, không chạy Node ở production | Proposed | 15 |
 | ADR-010 | Synthetic data dạng snapshot theo từng booking; sự thật ẩn tách riêng trong `data/oracle/` | Accepted | 2 |
 | ADR-011 | Chia train / validation / test theo thời gian ở cấp booking (40 / 8 / 8 ngày, `ml/data/splits.py`); EDA chỉ dùng tập train | Accepted | 3 |
+| ADR-012 | Đánh giá offline: replay offer tuần tự (N = 3) với common random numbers; metric là tỷ số của tổng theo booking; paired bootstrap 95% CI; so sánh với Random, Nearest Driver, Weighted rule, Oracle | Accepted | 4 |
 
 ---
 

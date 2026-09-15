@@ -473,7 +473,8 @@ def _table_info(ds: SyntheticDataset, names: tuple[str, ...]) -> dict:
 
 
 def _write_json(path: Path, payload: dict) -> None:
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    # newline="\n": identical bytes on every OS (Windows would otherwise write CRLF).
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
 
 
 def _to_latlon(cfg: GeneratorConfig, x_km, y_km) -> tuple[np.ndarray, np.ndarray]:

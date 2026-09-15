@@ -240,7 +240,7 @@ Lưu ý khi đọc metric:
 
 - **Average ETA chỉ tính trên booking matched → có selection bias.** Một policy ghép được ít booking hơn có thể có ETA trung bình thấp hơn.
   Luôn đọc Average ETA cùng với MSR.
-- AR phụ thuộc vào `N`. Định nghĩa cuối cùng được chốt ở Phase 4 và **phải dùng giống hệt nhau** cho Baseline và ML.
+- AR phụ thuộc vào `N`. Định nghĩa đã được **chốt ở Phase 4** ([evaluation.md §2.3](evaluation.md)) và **phải dùng giống hệt nhau** cho Baseline và ML.
 
 ### 8.2 North Star & guardrails
 
@@ -333,7 +333,7 @@ Nếu H1 không đạt, evaluation report ghi đúng như vậy.
 | Q6 | Vector store: pgvector hay Chroma (đề xuất: pgvector)? | Phase 11 |
 | Q7 | Commit model artifact vào git hay train trong bước build? | Phase 7, 15 |
 | Q8 | ~~Training labels chỉ có cho tài xế đã được offer hay có cho mọi candidate?~~ **Đã chốt:** cả hai — log thực tế (nearest-first + 20% exploration) cho training; `data/oracle/` có outcome cho mọi candidate, chỉ dành cho evaluation — xem [data/README.md](../data/README.md) | Phase 2 ✅ |
-| Q9 | Có thêm baseline phụ (weighted rule score) và dòng Oracle (upper bound từ mô hình ẩn) vào evaluation không? | Phase 4, 6 |
+| Q9 | ~~Có thêm baseline phụ (weighted rule score) và dòng Oracle (upper bound từ mô hình ẩn) vào evaluation không?~~ **Đã chốt:** có, cùng Random làm mức sàn — xem [evaluation.md](evaluation.md) | Phase 4 ✅ |
 
 ---
 

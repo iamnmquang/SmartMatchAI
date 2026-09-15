@@ -8,7 +8,7 @@ Mini production AI product (mô phỏng): **xếp hạng tài xế cho booking b
 
 ## Status
 
-**Phase 3 — Exploratory Data Analysis: hoàn thành.** README đầy đủ (kết quả, screenshots, demo) sẽ được viết ở Phase 20.
+**Phase 4 — Baseline: hoàn thành.** README đầy đủ (kết quả, screenshots, demo) sẽ được viết ở Phase 20.
 
 ## Ý tưởng
 
@@ -40,6 +40,7 @@ mà không làm xấu guardrail metrics (xem [PRD §8](docs/product-requirements
 | [Research](docs/research.md) | Problem formulation, related work, so sánh 6 hướng matching, chọn baseline và ML approach, experiment design, EDA findings | 1, 3 |
 | [Data](data/README.md) | Data policy, cách generate, schema, mô hình sinh dữ liệu, thống kê | 0, 2 |
 | [EDA notebook](notebooks/01_eda.ipynb) | Chất lượng dữ liệu, phân phối, outlier, confounding, selection bias, feature importance sơ bộ | 3 |
+| [Evaluation](docs/evaluation.md) | Protocol đánh giá offline, định nghĩa metric, kết quả baseline (Random, Nearest Driver, Weighted rule, Oracle) | 4 |
 | [Master prompt](docs/master-prompt.md) | Yêu cầu gốc của project (nguyên văn) — đối chiếu phạm vi, quy tắc và quy trình theo phase | — |
 
 ## Roadmap
@@ -50,7 +51,7 @@ mà không làm xấu guardrail metrics (xem [PRD §8](docs/product-requirements
 | 1 | Research | ✅ Done |
 | 2 | Synthetic Dataset | ✅ Done |
 | 3 | EDA | ✅ Done |
-| 4 | Baseline (Nearest Driver) | ⬜ |
+| 4 | Baseline (Nearest Driver) | ✅ Done |
 | 5 | Train ML Model | ⬜ |
 | 6 | Evaluation & Benchmarking | ⬜ |
 | 7 | Model Serving | ⬜ |
@@ -102,6 +103,8 @@ pytest                               # chạy test
 
 # Phase 3: chạy lại EDA từ đầu đến cuối (hoặc mở notebook bằng Jupyter / VS Code với kernel .venv)
 jupyter nbconvert --to notebook --execute --inplace notebooks/01_eda.ipynb
+
+python -m ml.evaluation.run_baseline # Phase 4: đánh giá baseline → ml/evaluation/results/baseline.json
 ```
 
 Các bước tiếp theo sẽ được bổ sung theo từng phase.
