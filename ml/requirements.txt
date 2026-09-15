@@ -1,0 +1,4 @@
+# Offline ML pipeline (pinned). Phase 2: synthetic data generation.
+numpy==2.5.3
+pandas==3.0.5
+pyarrow==25.0.1

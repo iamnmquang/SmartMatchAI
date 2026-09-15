@@ -23,6 +23,7 @@ data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+data/oracle/
 
 # ---- ML artifacts: commit policy decided in Phase 7 ----
 ml/models/*

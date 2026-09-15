@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Version | 0.2 |
+| Version | 0.3 |
 | Phase | 0 — Product Definition |
 | Status | Draft — chờ review |
 | Owner | @iamnmquang |
@@ -297,8 +297,8 @@ Nếu H1 không đạt, evaluation report ghi đúng như vậy.
 
 | ID | Assumption |
 |---|---|
-| A1 | Một khu vực đô thị giả lập (bounding box lat/lon); chi tiết ở Phase 2. |
-| A2 | Distance là khoảng cách đường chim bay (haversine); ETA = distance / tốc độ trung bình điều chỉnh theo traffic. Không có routing thật. |
+| A1 | Thành phố hư cấu 20 × 20 km quanh toạ độ (0, 0) với 4 hotspot; chi tiết trong [data/README.md](../data/README.md). |
+| A2 | Distance là khoảng cách đường chim bay (haversine); ETA = 1 phút + distance × detour factor / tốc độ theo traffic. Không có routing thật. |
 | A3 | Hành vi nhận/huỷ chuyến của tài xế tuân theo một mô hình xác suất **ẩn** trong simulator. Model ML không được truy cập mô hình này, chỉ học từ nhãn đã sample. |
 | A4 | Mỗi booking được xử lý độc lập; MVP không mô phỏng việc supply tài xế cạn dần theo thời gian. |
 | A5 | Offer tuần tự tối đa `N` lượt. |
@@ -332,7 +332,7 @@ Nếu H1 không đạt, evaluation report ghi đúng như vậy.
 | Q5 | Authentication: API key tĩnh hay JWT login cho admin? | Phase 9 |
 | Q6 | Vector store: pgvector hay Chroma (đề xuất: pgvector)? | Phase 11 |
 | Q7 | Commit model artifact vào git hay train trong bước build? | Phase 7, 15 |
-| Q8 | Training labels chỉ có cho tài xế đã được offer (giống log thực tế, cần logging policy có exploration) hay có cho mọi candidate? | Phase 2 |
+| Q8 | ~~Training labels chỉ có cho tài xế đã được offer hay có cho mọi candidate?~~ **Đã chốt:** cả hai — log thực tế (nearest-first + 20% exploration) cho training; `data/oracle/` có outcome cho mọi candidate, chỉ dành cho evaluation — xem [data/README.md](../data/README.md) | Phase 2 ✅ |
 | Q9 | Có thêm baseline phụ (weighted rule score) và dòng Oracle (upper bound từ mô hình ẩn) vào evaluation không? | Phase 4, 6 |
 
 ---

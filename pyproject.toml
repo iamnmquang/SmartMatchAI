@@ -1,0 +1,5 @@
+# Tool configuration only; the repository is not packaged.
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["ml/tests"]

@@ -121,8 +121,8 @@ Ví dụ minh hoạ toán học với $p = [0.35, 0.8, 0.2, 0.6, 0.5]$, $N = 3$.
 - **Khi nào nên dùng.** Làm baseline. Khi tỷ lệ nhận chuyến gần như luôn cao (ví dụ auto-accept). Mật độ thấp, ít tranh chấp.
 - **Dữ liệu & feature.** Vị trí tài xế và booking, trạng thái available, (ETA từ routing engine nếu có).
 - **Evaluation metrics.** Average pickup ETA/distance, MSR, AR, CR.
-- **Vai trò trong SmartMatch.** **Baseline chính.** Nếu traffic là context cấp booking (dự kiến ở Phase 2), thì trong cùng một booking
-  thứ tự theo distance trùng với thứ tự theo ETA.
+- **Vai trò trong SmartMatch.** **Baseline chính.** Trong simulator (Phase 2), traffic là context cấp booking nhưng ETA có thêm
+  detour factor ngẫu nhiên theo từng cặp booking – driver, nên thứ tự theo distance *gần* trùng — nhưng không hoàn toàn trùng — với thứ tự theo ETA.
 
 ### 3.3 Classification (pointwise)
 

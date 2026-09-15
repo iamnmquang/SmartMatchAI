@@ -8,7 +8,7 @@ Mini production AI product (mô phỏng): **xếp hạng tài xế cho booking b
 
 ## Status
 
-**Phase 1 — Research: hoàn thành.** README đầy đủ (kết quả, screenshots, demo) sẽ được viết ở Phase 20.
+**Phase 2 — Synthetic Dataset: hoàn thành.** README đầy đủ (kết quả, screenshots, demo) sẽ được viết ở Phase 20.
 
 ## Ý tưởng
 
@@ -38,7 +38,7 @@ mà không làm xấu guardrail metrics (xem [PRD §8](docs/product-requirements
 | [Product Requirements](docs/product-requirements.md) | Problem, personas, user journeys, MVP, FR/NFR, KPIs, trade-offs, risks | 0 |
 | [Architecture](docs/architecture.md) | Components, flows, repository structure, tech stack, decision log | 0 |
 | [Research](docs/research.md) | Problem formulation, related work, so sánh 6 hướng matching, chọn baseline và ML approach, experiment design | 1 |
-| [Data policy](data/README.md) | Nguồn dữ liệu, quy tắc, cách generate | 0, 2 |
+| [Data](data/README.md) | Data policy, cách generate, schema, mô hình sinh dữ liệu, thống kê | 0, 2 |
 
 ## Roadmap
 
@@ -46,7 +46,7 @@ mà không làm xấu guardrail metrics (xem [PRD §8](docs/product-requirements
 |---|---|---|
 | 0 | Product Definition | ✅ Done |
 | 1 | Research | ✅ Done |
-| 2 | Synthetic Dataset | ⬜ |
+| 2 | Synthetic Dataset | ✅ Done |
 | 3 | EDA | ⬜ |
 | 4 | Baseline (Nearest Driver) | ⬜ |
 | 5 | Train ML Model | ⬜ |
@@ -80,12 +80,23 @@ Lý do lựa chọn và trade-off: [Architecture §8](docs/architecture.md#8-tec
 - Node.js 22+
 - Docker + Docker Compose v2
 - Git
-- GNU Make (từ Phase 2; trên Windows cài qua Chocolatey/Scoop hoặc dùng WSL)
+- GNU Make (tuỳ chọn, khi Makefile được thêm; trên Windows cài qua Chocolatey/Scoop hoặc dùng WSL)
 
 ## Setup
 
 ```bash
-cp .env.example .env   # điền giá trị; không bao giờ commit .env
+cp .env.example .env                 # điền giá trị; không bao giờ commit .env
+
+python -m venv .venv
+source .venv/bin/activate            # Windows PowerShell: .venv\Scripts\Activate.ps1
+pip install -r requirements-dev.txt
 ```
 
-Các bước chạy project sẽ được bổ sung theo từng phase.
+## Chạy pipeline
+
+```bash
+python -m ml.data.generate           # Phase 2: sinh dữ liệu synthetic → data/raw/, data/oracle/
+pytest                               # chạy test
+```
+
+Các bước tiếp theo sẽ được bổ sung theo từng phase.

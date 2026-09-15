@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Version | 0.2 |
-| Phase | 0 — Product Definition; cập nhật ở Phase 1 |
+| Version | 0.3 |
+| Phase | 0 — Product Definition; cập nhật ở Phase 1, 2 |
 | Status | Draft. Các mục đánh dấu **Proposed** sẽ được chốt ở phase tương ứng. |
 | Last updated | 2026-09-15 |
 
@@ -217,11 +217,16 @@ smartmatch-ai/
 │   ├── api.md                    P9
 │   ├── deployment.md             P18
 │   └── experiment.md             P20
+├── pyproject.toml                Cấu hình tool (pytest)
+├── requirements-dev.txt          Dependencies cho dev/test (pinned)
 ├── data/                         Dữ liệu synthetic — không commit, tái tạo bằng code + seed
-│   ├── README.md                 Data policy + cách generate
-│   ├── raw/                      Output của generator (P2)
+│   ├── README.md                 Data policy, cách generate, schema, mô hình sinh dữ liệu
+│   ├── raw/                      Dữ liệu quan sát được: drivers, bookings, candidates (P2)
+│   ├── oracle/                   Sự thật ẩn của simulator — chỉ evaluation được đọc (P2)
 │   └── processed/                Feature tables, splits (P5)
 ├── ml/                           Pipeline offline
+│   ├── requirements.txt          Dependencies (pinned)
+│   ├── tests/                    Test cho pipeline ML (từ P2)
 │   ├── data/                     Generator + mô hình hành vi ẩn của simulator (P2)
 │   ├── features/                 Feature engineering, dùng chung train & serve (P5)
 │   ├── training/                 Train, tuning (P5)
@@ -248,7 +253,7 @@ smartmatch-ai/
 ├── scripts/                      CLI: generate data, seed DB, ingest knowledge, benchmark
 ├── docker/                       Dockerfiles, Nginx config (P15, P18)
 ├── docker-compose.yml            (P8: Postgres cho dev → P15: full stack)
-└── Makefile                      Lệnh tắt (từ P2)
+└── Makefile                      Lệnh tắt (thêm khi môi trường dev có GNU Make)
 ```
 
 **Quy ước:** Phase 0 chỉ tạo thư mục (giữ trong git bằng `.gitkeep`) và các file đã có nội dung thật.
@@ -270,6 +275,7 @@ Version cụ thể được pin khi cài đặt ở từng phase (không ghi ver
 | Database | PostgreSQL 16 (Docker) | Relational, SQL analytics tốt, hỗ trợ pgvector | SQLite (không phù hợp multi-container/production) |
 | Cache / queue | **Không dùng Redis** | Matching là sync, dữ liệu nhỏ; chưa có nhu cầu đo được | Thêm khi có bằng chứng: cache analytics nặng, rate limit nhiều instance |
 | Data / ML | pandas, NumPy, scikit-learn | Chuẩn cho tabular | Polars (nhanh hơn, ít tài liệu ML hơn) |
+| Data format | **Accepted (Phase 2):** Parquet (pyarrow) | Giữ kiểu dữ liệu (datetime, category, nullable), nén tốt, đọc nhanh | CSV (dễ mở nhưng mất kiểu dữ liệu, file lớn hơn) |
 | Model | **Accepted (Phase 1):** pointwise XGBoost `XGBClassifier` → P(accept), sort giảm dần; Logistic Regression làm mốc tuyến tính; fallback `HistGradientBoostingClassifier` | Sort theo P(accept) tối ưu MSR dưới giả định offer tuần tự; mạnh cho tabular; có sẵn TreeSHAP (`pred_contribs`) để giải thích — xem [research.md §6](research.md) | LightGBM (tương đương); `XGBRanker` (ablation ở Phase 5–6); deep learning; optimization-based (future work) |
 | Serialization | **Proposed:** định dạng native của XGBoost + metadata JSON; joblib cho preprocessing của scikit-learn nếu có — chốt ở Phase 7 | Native format ổn định giữa các version hơn pickle | joblib/pickle cho toàn bộ (dễ vỡ khi đổi version thư viện) |
 | Explanation | **Proposed:** reason từ feature contribution + template — chốt ở Phase 7 | Deterministic, rẻ, không hallucinate | LLM tự viết reason (chậm, tốn tiền, có thể bịa) |
@@ -288,7 +294,7 @@ Version cụ thể được pin khi cài đặt ở từng phase (không ghi ver
 Ghi chú cần kiểm tra khi tới phase:
 
 - **Phase 7 / 15:** wheel XGBoost mặc định trên Linux kèm GPU support nên khá nặng; kiểm tra package `xgboost-cpu` để giảm kích thước image.
-- **Phase 2:** máy dev Windows chưa có GNU Make → cài Make (Chocolatey/Scoop) hoặc dùng WSL; VPS và CI (Linux) có sẵn.
+- **Phase 2:** máy dev Windows chưa có GNU Make → tạm dùng lệnh `python -m ...` trực tiếp; Makefile được thêm khi có Make (Chocolatey/Scoop/WSL). VPS và CI (Linux) có sẵn.
 
 ---
 
@@ -315,11 +321,12 @@ Nếu chọn pgvector, "vector-db" nằm chung container PostgreSQL.
 | ADR-002 | Không dùng Redis trong MVP | Accepted | 0 |
 | ADR-003 | LLM chỉ truy cập dữ liệu qua predefined tools, không raw SQL | Accepted | 0 |
 | ADR-004 | Provider abstraction cho LLM và embeddings | Accepted | 0 |
-| ADR-005 | Offline evaluation bằng simulator: cùng booking test, cùng mô hình outcome ẩn, cùng random numbers | Proposed | 2, 6 |
+| ADR-005 | Offline evaluation bằng simulator: cùng booking test, cùng mô hình outcome ẩn, cùng random numbers | Accepted (dữ liệu: P2; evaluation: P6) | 2, 6 |
 | ADR-006 | Pointwise P(accept) với XGBoost để ranking; Learning-to-Rank chỉ là ablation | Accepted | 1 |
 | ADR-007 | Reason deterministic từ model, không do LLM sinh | Proposed | 7 |
 | ADR-008 | pgvector thay vì Chroma | Proposed | 11 |
 | ADR-009 | Nginx serve React static build, không chạy Node ở production | Proposed | 15 |
+| ADR-010 | Synthetic data dạng snapshot theo từng booking; sự thật ẩn tách riêng trong `data/oracle/` | Accepted | 2 |
 
 ---
 
