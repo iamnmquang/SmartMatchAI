@@ -29,7 +29,7 @@ chạy **1.8 giây**, peak working set **379 MiB**.
 |---|---|---|
 | `raw/` | `drivers.parquet`, `bookings.parquet`, `candidates.parquet`, `metadata.json` | Mọi code: EDA, feature engineering, training, seed database |
 | `oracle/` | `candidate_truth.parquet`, `driver_latents.parquet`, `metadata.json` | **Chỉ offline evaluation** (Phase 4, 6, 20). Không bao giờ dùng cho training, feature hay serving |
-| `processed/` | Feature tables, train/validation/test splits | Phase 5 |
+| `processed/` | Trống — Phase 5 quyết định **không** materialize feature table: tính lại từ `raw/` bằng `ml/features` mất vài giây và không thể lệch với code serving (architecture ADR-013) | — |
 
 ## 4. Schema
 

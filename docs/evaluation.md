@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Version | 0.1 |
-| Phase | 4 — Baseline (Phase 6 bổ sung ML vs Baseline) |
+| Version | 0.2 |
+| Phase | 4 — Baseline; §6 cập nhật ở Phase 5 (Phase 6 bổ sung ML vs Baseline) |
 | Status | Baseline done — chờ review |
-| Last updated | 2026-09-15 |
+| Last updated | 2026-09-16 |
 
 Tài liệu liên quan: [PRD §8 — Metrics](product-requirements.md) · [Research §6–7](research.md) · [Data](../data/README.md) ·
 kết quả gốc: [`ml/evaluation/results/baseline.json`](../ml/evaluation/results/baseline.json).
@@ -67,7 +67,7 @@ Kiểm chứng tự động: replay Nearest Driver **tái tạo chính xác** t�
 | **Average ETA (matched)** | trung bình ETA của tài xế đã nhận, trên các booking matched | **Selection bias**: luôn đọc cùng MSR |
 | P90 ETA (matched) | phân vị 90 của ETA trên booking matched | Đuôi phân phối trải nghiệm chờ |
 | **Cancellation rate (CR)** | booking bị huỷ / booking matched | Guardrail (H3) |
-| Completed rate | booking matched và không bị huỷ / mọi booking | Kết hợp MSR và CR |
+| **Completed rate** | booking matched và không bị huỷ / mọi booking | Kết hợp MSR và CR. North Star thứ hai từ Phase 5 (PRD §8.2) |
 | First-offer acceptance rate | booking nhận ngay ở offer đầu / booking có ứng viên | Tốc độ xác nhận |
 | Offers per booking | tổng offer / booking có ứng viên | Hiệu suất dispatch |
 
@@ -153,6 +153,10 @@ hơn: MSR tăng rất ít, ETA và cancellation xấu đi. PRD Q2 (score cuối 
 | C. Utility | `P(accept) × (1 − P(cancel)) − λ · ETA`; λ chọn trên validation dưới ràng buộc guardrail | Tối ưu đúng completed trips | Cần model thứ hai cho cancellation (nhãn lệch, 13%); cần xác suất được calibrate |
 
 Cũng cần PM quyết định: có nên nâng **completed rate** lên ngang hàng North Star (MSR) không, vì nó phản ánh cả "được nhận" lẫn "không bị huỷ".
+
+> **Cập nhật Phase 5 (2026-09-16).** Cả hai câu hỏi đã được chốt: completed rate trở thành North Star thứ hai
+> ([PRD §8.2](product-requirements.md)), và Phase 5 chỉ train **một** model P(accept) — phương án A và B sẽ được so sánh trên
+> validation ở Phase 6 ([research §10.7](research.md)). Phương án C (utility có P(cancel)) không được chọn cho MVP.
 
 ## 7. Giới hạn
 

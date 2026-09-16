@@ -8,7 +8,7 @@ Mini production AI product (mô phỏng): **xếp hạng tài xế cho booking b
 
 ## Status
 
-**Phase 4 — Baseline: hoàn thành.** README đầy đủ (kết quả, screenshots, demo) sẽ được viết ở Phase 20.
+**Phase 5 — Train ML Model: hoàn thành.** README đầy đủ (kết quả, screenshots, demo) sẽ được viết ở Phase 20.
 
 ## Ý tưởng
 
@@ -37,7 +37,7 @@ mà không làm xấu guardrail metrics (xem [PRD §8](docs/product-requirements
 |---|---|---|
 | [Product Requirements](docs/product-requirements.md) | Problem, personas, user journeys, MVP, FR/NFR, KPIs, trade-offs, risks | 0 |
 | [Architecture](docs/architecture.md) | Components, flows, repository structure, tech stack, decision log | 0 |
-| [Research](docs/research.md) | Problem formulation, related work, so sánh 6 hướng matching, chọn baseline và ML approach, experiment design, EDA findings | 1, 3 |
+| [Research](docs/research.md) | Problem formulation, related work, so sánh 6 hướng matching, chọn baseline và ML approach, experiment design, EDA findings, kết quả training | 1, 3, 5 |
 | [Data](data/README.md) | Data policy, cách generate, schema, mô hình sinh dữ liệu, thống kê | 0, 2 |
 | [EDA notebook](notebooks/01_eda.ipynb) | Chất lượng dữ liệu, phân phối, outlier, confounding, selection bias, feature importance sơ bộ | 3 |
 | [Evaluation](docs/evaluation.md) | Protocol đánh giá offline, định nghĩa metric, kết quả baseline (Random, Nearest Driver, Weighted rule, Oracle) | 4 |
@@ -53,7 +53,7 @@ mà không làm xấu guardrail metrics (xem [PRD §8](docs/product-requirements
 | 2 | Synthetic Dataset | ✅ Done |
 | 3 | EDA | ✅ Done |
 | 4 | Baseline (Nearest Driver) | ✅ Done |
-| 5 | Train ML Model | ⬜ |
+| 5 | Train ML Model | ✅ Done |
 | 6 | Evaluation & Benchmarking | ⬜ |
 | 7 | Model Serving | ⬜ |
 | 8 | PostgreSQL | ⬜ |
@@ -106,6 +106,7 @@ pytest                               # chạy test
 jupyter nbconvert --to notebook --execute --inplace notebooks/01_eda.ipynb
 
 python -m ml.evaluation.run_baseline # Phase 4: đánh giá baseline → ml/evaluation/results/baseline.json
+python -m ml.training.train          # Phase 5: train P(accept) → ml/training/results/training.json
 ```
 
 Các bước tiếp theo sẽ được bổ sung theo từng phase.

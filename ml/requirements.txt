@@ -3,3 +3,5 @@ numpy==2.5.3
 pandas==3.0.5
 pyarrow==25.0.1
 scikit-learn==1.9.1
+xgboost==3.4.1
+joblib==1.6.0  # imported directly to save the fitted linear pipeline (also a scikit-learn dependency)

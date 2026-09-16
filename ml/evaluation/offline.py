@@ -13,18 +13,11 @@ import numpy as np
 import pandas as pd
 
 from ml.data.splits import assign_split
+from ml.features.view import build_decision_time_view
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-# What a policy may see at decision time. Log artifacts (offer_rank, logging_policy) and labels are excluded.
-DECISION_TIME_CANDIDATE_COLUMNS = [
-    "booking_id", "driver_id", "driver_lat", "driver_lon", "distance_km", "estimated_eta_min", "idle_time_min",
-]
-BOOKING_CONTEXT_COLUMNS = [
-    "booking_id", "request_time", "pickup_lat", "pickup_lon", "destination_lat", "destination_lon",
-    "passenger_type", "traffic_level", "weather", "time_of_day",
-]
-DRIVER_PROFILE_COLUMNS = ["driver_id", "vehicle_type", "rating", "acceptance_rate", "cancellation_rate", "completed_trips"]
+# What a policy may see at decision time is defined once, in ml/features/view.py, and shared with training.
 TRUTH_COLUMNS = ["booking_id", "driver_id", "p_accept", "u_accept", "p_cancel", "u_cancel"]
 
 # Every metric is a ratio of per-booking sums, which makes point estimates and bootstrap resamples consistent.
@@ -53,12 +46,7 @@ def build_evaluation_data(
         raise ValueError("candidate_truth is not aligned with candidates")
     split_bookings = bookings[assign_split(bookings["request_time"]) == split].reset_index(drop=True)
     in_split = candidates["booking_id"].isin(split_bookings["booking_id"]).to_numpy()
-    view = (
-        candidates.loc[in_split, DECISION_TIME_CANDIDATE_COLUMNS]
-        .merge(split_bookings[BOOKING_CONTEXT_COLUMNS], on="booking_id", how="left")
-        .merge(drivers[DRIVER_PROFILE_COLUMNS], on="driver_id", how="left")
-        .reset_index(drop=True)
-    )
+    view = build_decision_time_view(split_bookings, candidates.loc[in_split], drivers)
     split_truth = truth.loc[in_split, TRUTH_COLUMNS].reset_index(drop=True)
     if not np.array_equal(view[["booking_id", "driver_id"]].to_numpy(), split_truth[["booking_id", "driver_id"]].to_numpy()):
         raise ValueError("decision-time view lost alignment with the truth table")

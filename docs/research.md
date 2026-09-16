@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Version | 0.2 |
-| Phase | 1 — Research; §9 EDA findings: Phase 3 |
+| Version | 0.3 |
+| Phase | 1 — Research; §9 EDA findings: Phase 3; §10 training: Phase 5 |
 | Status | Done — chờ review |
-| Last updated | 2026-09-15 |
+| Last updated | 2026-09-16 |
 
 Tài liệu liên quan: [Product Requirements](product-requirements.md) · [Architecture](architecture.md).
 
@@ -500,6 +500,115 @@ Hai thước đo không luôn cùng thứ tự: `hour` có AUC ≈ 0.5 nhưng mu
 | 7 | Không cần resampling hay class weight cho `accepted` | §9.2 |
 | 8 | Báo cáo metric theo booking (NDCG@5, Hit@1) bên cạnh ROC-AUC: traffic, weather, time là tín hiệu chung của cả booking — giúp AUC toàn cục nhưng không giúp xếp hạng trong booking | §9.4, §6.2 |
 | 9 | Vùng tài xế xa chủ yếu có nhãn từ 20% explore → model kém chắc chắn hơn ở vùng này; kiểm tra calibration theo khoảng ETA ở Phase 6 | §9.6 |
+
+---
+
+## 10. Training the acceptance model (Phase 5)
+
+Nguồn số liệu: [`ml/training/results/training.json`](../ml/training/results/training.json), sinh bởi `python -m ml.training.train`
+(generator 1.0.0 seed 42, seed training 5). Mọi con số dưới đây đo trên **tập validation**; tập test chưa được đọc.
+
+### 10.1 Thiết lập
+
+| | |
+|---|---|
+| Target | `accepted` của từng offer đã gửi (pointwise, ADR-006) |
+| Train | 108,050 offer có nhãn từ 70,799 booking (acceptance 0.538) |
+| Validation | 21,303 offer từ 13,977 booking (acceptance 0.541) |
+| Test | **không load** — chỉ dùng một lần ở Phase 6 |
+| Feature | 28 cột (§10.2) |
+| Tuning | Logistic Regression: lưới `C` 5 giá trị. XGBoost: random search 30 trial + early stopping (50 vòng) trên validation |
+| Tiêu chí chọn | **Validation log loss** — proper scoring rule, thưởng cả khả năng phân biệt lẫn calibration (cần cho utility ở PRD Q2) |
+
+Model cuối **chỉ train trên tập train**. Validation được giữ nguyên chưa dùng cho fit để Phase 6 còn một tập sạch tinh chỉnh policy
+(ví dụ chọn ngưỡng ETA của phương án B) trên một model chưa từng thấy tập đó.
+
+### 10.2 Feature và preprocessing
+
+| Nhóm | Feature |
+|---|---|
+| Pair | `estimated_eta_min`, `distance_km`, `pickup_to_trip_ratio`, `distance_minus_min_km` |
+| Booking | `trip_km`, `hour`, `is_weekend`, one-hot `passenger_type` |
+| Driver | `idle_time_min` (giá trị tại thời điểm booking), `rating`, `has_rating`, `acceptance_rate`, `cancellation_rate`, `completed_trips`, one-hot `vehicle_type` |
+| Context | one-hot `traffic_level`, `weather`, `time_of_day` |
+
+Theo §9.8.3, chỉ giữ **một** trong hai relative feature: `distance_minus_min_km` (bỏ `distance_rank_in_booking`, ρ = 0.97) — đơn vị km
+giữ nguyên ý nghĩa khi số ứng viên của booking thay đổi.
+
+Ba quyết định kỹ thuật chống skew và chống leakage, cài trong [`ml/features/`](../ml/features/):
+
+1. **Một hàm feature duy nhất** cho training và serving (architecture §4.1). Test kiểm tra: tính feature cho từng booking riêng lẻ
+   (như lúc serving) cho kết quả **giống hệt** tính theo lô.
+2. **Không có encoder được fit.** Danh sách level của biến phân loại là hằng số, không suy ra từ dữ liệu, nên thứ tự và ý nghĩa cột
+   giống nhau ở mọi kích thước dữ liệu; level lạ là lỗi, không phải một cách mã hoá khác. Hệ quả: không có preprocessing leakage
+   (§5.3) trong phần dùng chung.
+3. **Relative feature tính trên toàn bộ candidate set của booking**, rồi mới lọc các dòng có nhãn. Nếu tính "xa hơn người gần nhất
+   bao nhiêu" chỉ trên 1–3 dòng đã được offer, giá trị sẽ khác lúc serving — một dạng training-serving skew không báo lỗi.
+
+Preprocessing riêng của Logistic Regression (`log1p` cho `completed_trips` và `idle_time_min`, impute median cho `rating`, chuẩn hoá)
+nằm trong scikit-learn pipeline và **chỉ fit trên tập train**. XGBoost không cần: nó tách trực tiếp trên giá trị thô và định tuyến NaN.
+
+### 10.3 Kết quả trên validation
+
+| Metric | Logistic Regression | XGBoost | Ghi chú |
+|---|---|---|---|
+| ROC-AUC | 0.8810 | **0.8818** | Trần oracle trên logged offers: 0.902 (data/README §6.5) |
+| PR-AUC | 0.8868 | **0.8881** | |
+| Log loss | 0.4277 | **0.4264** | Tiêu chí chọn model |
+| Brier | 0.1380 | **0.1376** | |
+| Precision / Recall / F1 @ 0.5 | 0.796 / 0.852 / 0.823 | 0.794 / 0.855 / 0.824 | Chỉ để chẩn đoán — ranking không dùng ngưỡng |
+| Hit@1 trong booking | 0.6197 | **0.6213** | Chỉ trên 2,514 / 13,977 booking đủ điều kiện (§10.5) |
+| NDCG@5 trong booking | 0.8539 | **0.8546** | |
+| Expected calibration error | **0.0102** | 0.0115 | |
+| ROC-AUC trên tập train | 0.8879 | 0.8920 | Chênh so với validation ≈ 0.007–0.010 → không overfit |
+
+Tham số XGBoost được chọn: `max_depth` 3, `learning_rate` 0.040, `min_child_weight` 6.2, `subsample` 0.62, `colsample_bytree` 0.60,
+`reg_lambda` 1.07, `reg_alpha` 0.61, 429 cây (early stopping).
+
+### 10.4 AB1 — quan hệ phi tuyến có đáng giá không?
+
+**Gần như không, trên dữ liệu này.** XGBoost hơn Logistic Regression **+0.0007 ROC-AUC** và **−0.0013 log loss** — nhỏ hơn nhiều so với
+khoảng cách giữa cả hai và trần oracle (0.902).
+
+Bằng chứng cho thấy đây không phải do search kém:
+
+- 30 trial của random search chỉ trải trong 0.4264 – 0.4314 log loss (trung vị 0.4276); 5 trial tốt nhất đều có `max_depth` 3–5.
+- Cấu hình thắng cuộc là cây **nông nhất trong không gian tìm kiếm** (`max_depth` 3). Kiểm tra thêm ngoài search với `max_depth` 6 và 8
+  (lr 0.05) cho log loss 0.4273 và 0.4274 — không tốt hơn.
+
+Diễn giải: tín hiệu mạnh nhất (ETA, khoảng cách, acceptance rate lịch sử) gần như đơn điệu (§9.4), one-hot đã cho model tuyến tính
+biểu diễn được hiệu ứng của traffic / weather / time, và phần còn lại chủ yếu là nhiễu ở cấp từng offer mà không model nào quan sát được.
+Đây là kết quả **có lợi cho vận hành** nếu nó lặp lại ở Phase 6: một model tuyến tính rẻ hơn và dễ giải thích hơn nhiều.
+
+### 10.5 Calibration
+
+Xác suất dự đoán bám sát tần suất thực, kể cả ở vùng ETA xa nơi nhãn chủ yếu đến từ 20% explore (§9.8.9):
+
+| Khoảng ETA (phút) | n | Trung bình dự đoán | Thực tế |
+|---|---|---|---|
+| [0, 6) | 5,126 | 0.869 | 0.861 |
+| [6, 10) | 5,316 | 0.745 | 0.734 |
+| [10, 15) | 4,849 | 0.488 | 0.476 |
+| [15, 20) | 3,196 | 0.225 | 0.232 |
+| [20, ∞) | 2,816 | 0.050 | 0.053 |
+
+Sai lệch lớn nhất ≈ 2 pp (XGBoost hơi lạc quan ở khoảng giữa). → Xác suất **dùng được** trong một utility score (PRD Q2 phương án C)
+mà chưa cần calibration bổ sung.
+
+### 10.6 Giới hạn của metric ranking đo offline
+
+Hit@1 và NDCG@5 chỉ tính được trên **2,514 / 13,977 booking** của validation — số còn lại có ít hơn 2 offer có nhãn hoặc không có ai nhận.
+Hơn nữa, các ứng viên có nhãn do logging policy chọn, không phải một mẫu ngẫu nhiên. Vì vậy hai con số này chỉ là **kiểm tra định hướng**;
+thước đo thứ hạng trung thực là replay dispatch ở Phase 6, nơi mọi ứng viên đều có outcome từ simulator.
+
+### 10.7 Hệ quả cho Phase 6
+
+| # | Việc |
+|---|---|
+| 1 | So sánh phương án A (score = P(accept)) và B (P(accept) trong ràng buộc ETA) trên validation, rồi chạy **một lần** trên test |
+| 2 | Đưa cả Logistic Regression vào bảng so sánh business metrics: nếu nó ngang XGBoost, kết luận phải nói rõ |
+| 3 | Chạy ablation AB2–AB5 (§7.5) trên validation |
+| 4 | H4 đạt: ROC-AUC 0.882 — cao hơn hẳn 0.5, thấp hơn ngưỡng nghi ngờ 0.95, và thấp hơn trần oracle 0.902 |
 
 ---
 

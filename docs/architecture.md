@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Version | 0.4 |
-| Phase | 0 — Product Definition; cập nhật ở Phase 1, 2, 3 |
+| Version | 0.5 |
+| Phase | 0 — Product Definition; cập nhật ở Phase 1, 2, 3, 5 |
 | Status | Draft. Các mục đánh dấu **Proposed** sẽ được chốt ở phase tương ứng. |
-| Last updated | 2026-09-15 |
+| Last updated | 2026-09-16 |
 
 Tài liệu liên quan: [Product Requirements](product-requirements.md) · [Research](research.md).
 
@@ -90,9 +90,8 @@ flowchart TB
 ```mermaid
 flowchart LR
     A["ml/data<br/>generate synthetic data (seed)"] --> B["data/raw"]
-    B --> C["ml/features<br/>build features"]
-    C --> D["data/processed"]
-    D --> E["ml/training<br/>train + tune (train / validation)"]
+    B --> C["ml/features<br/>decision-time view + feature matrix<br/>(shared with serving)"]
+    C --> E["ml/training<br/>train + tune (train / validation)"]
     E --> F["ml/evaluation<br/>test set: Baseline vs ML"]
     F --> G["ml/models<br/>artifact + metadata"]
     G --> H["scripts<br/>seed DB + register model version"]
@@ -101,6 +100,12 @@ flowchart LR
 **Training-serving skew.** Code feature engineering trong `ml/features` phải được **dùng chung** cho cả training và online inference.
 Nếu backend tự tính lại feature bằng code khác, model sẽ nhận input khác lúc train → dự đoán sai mà không báo lỗi.
 Cách backend import code `ml/` (installable package hay đưa vào `PYTHONPATH` / copy vào image) được chốt ở Phase 7.
+
+Phase 5 đã hiện thực nguyên tắc này trong [`ml/features/`](../ml/features/): `view.py` định nghĩa **những cột được phép nhìn thấy tại
+thời điểm quyết định** (dùng chung bởi evaluation từ Phase 4 và training), `build.py` là hàm thuần biến view đó thành ma trận feature.
+Không có encoder nào được fit ở đây — level của biến phân loại là hằng số — nên không có state phải đóng gói khi serving, và tính feature
+cho **một** booking cho kết quả giống hệt tính theo lô (có test kiểm chứng). Phần preprocessing *phải* fit (impute, scale cho model tuyến
+tính) nằm trong pipeline của `ml/training` và chỉ fit trên tập train.
 
 ### 4.2 Online matching
 
@@ -223,13 +228,13 @@ smartmatch-ai/
 │   ├── README.md                 Data policy, cách generate, schema, mô hình sinh dữ liệu
 │   ├── raw/                      Dữ liệu quan sát được: drivers, bookings, candidates (P2)
 │   ├── oracle/                   Sự thật ẩn của simulator — chỉ evaluation được đọc (P2)
-│   └── processed/                Feature tables, splits (P5)
+│   └── processed/                Trống — feature được tính lại từ code, không materialize (ADR-013)
 ├── ml/                           Pipeline offline
 │   ├── requirements.txt          Dependencies (pinned)
 │   ├── tests/                    Test cho pipeline ML (từ P2)
 │   ├── data/                     Generator, mô hình hành vi ẩn (P2), time-based split (P3)
-│   ├── features/                 Feature engineering, dùng chung train & serve (P5)
-│   ├── training/                 Train, tuning (P5)
+│   ├── features/                 view.py (cột được phép thấy) + build.py (ma trận feature), dùng chung train & serve (P5)
+│   ├── training/                 dataset, models, metrics, train CLI; results/ (commit), artifacts/ (gitignored) (P5)
 │   ├── evaluation/               Policies, offline dispatch replay, metrics, bootstrap; results/ (P4, P6)
 │   ├── inference/                predict.py (P7)
 │   └── models/                   Model artifacts + metadata (P7)
@@ -278,7 +283,7 @@ Version cụ thể được pin khi cài đặt ở từng phase (không ghi ver
 | Data / ML | pandas, NumPy, scikit-learn | Chuẩn cho tabular | Polars (nhanh hơn, ít tài liệu ML hơn) |
 | Data format | **Accepted (Phase 2):** Parquet (pyarrow) | Giữ kiểu dữ liệu (datetime, category, nullable), nén tốt, đọc nhanh | CSV (dễ mở nhưng mất kiểu dữ liệu, file lớn hơn) |
 | Notebook / EDA | **Accepted (Phase 3):** Jupyter notebook (ipykernel), kiểm chứng bằng `nbconvert --execute`; matplotlib | Đảm bảo notebook chạy lại được từ đầu đến cuối; ít dependency | seaborn (thêm dependency), plotly (notebook rất nặng) |
-| Model | **Accepted (Phase 1):** pointwise XGBoost `XGBClassifier` → P(accept), sort giảm dần; Logistic Regression làm mốc tuyến tính; fallback `HistGradientBoostingClassifier` | Sort theo P(accept) tối ưu MSR dưới giả định offer tuần tự; mạnh cho tabular; có sẵn TreeSHAP (`pred_contribs`) để giải thích — xem [research.md §6](research.md) | LightGBM (tương đương); `XGBRanker` (ablation ở Phase 5–6); deep learning; optimization-based (future work) |
+| Model | **Accepted (Phase 1, đã train ở Phase 5):** pointwise `XGBClassifier` (xgboost 3.4.1) → P(accept), sort giảm dần; Logistic Regression làm mốc tuyến tính; fallback `HistGradientBoostingClassifier` không cần dùng. Trên validation, XGBoost chỉ hơn Logistic Regression +0.0007 ROC-AUC ([research §10.4](research.md)) — chốt model phục vụ ở Phase 6 | Sort theo P(accept) tối ưu MSR dưới giả định offer tuần tự; mạnh cho tabular; có sẵn TreeSHAP (`pred_contribs`) để giải thích — xem [research.md §6](research.md) | LightGBM (tương đương); `XGBRanker` (ablation ở Phase 5–6); deep learning; optimization-based (future work) |
 | Serialization | **Proposed:** định dạng native của XGBoost + metadata JSON; joblib cho preprocessing của scikit-learn nếu có — chốt ở Phase 7 | Native format ổn định giữa các version hơn pickle | joblib/pickle cho toàn bộ (dễ vỡ khi đổi version thư viện) |
 | Explanation | **Proposed:** reason từ feature contribution + template — chốt ở Phase 7 | Deterministic, rẻ, không hallucinate | LLM tự viết reason (chậm, tốn tiền, có thể bịa) |
 | LLM | `LLMProvider` interface → `OpenAIProvider`, `MockLLMProvider`; model chọn qua env | Đổi provider/model không sửa application; test offline không tốn tiền | Gọi SDK trực tiếp khắp code (khoá chặt vào vendor) |
@@ -331,6 +336,8 @@ Nếu chọn pgvector, "vector-db" nằm chung container PostgreSQL.
 | ADR-010 | Synthetic data dạng snapshot theo từng booking; sự thật ẩn tách riêng trong `data/oracle/` | Accepted | 2 |
 | ADR-011 | Chia train / validation / test theo thời gian ở cấp booking (40 / 8 / 8 ngày, `ml/data/splits.py`); EDA chỉ dùng tập train | Accepted | 3 |
 | ADR-012 | Đánh giá offline: replay offer tuần tự (N = 3) với common random numbers; metric là tỷ số của tổng theo booking; paired bootstrap 95% CI; so sánh với Random, Nearest Driver, Weighted rule, Oracle | Accepted | 4 |
+| ADR-013 | Feature engineering dùng chung qua `ml/features` (decision-time view + builder thuần, level phân loại cố định, không fit encoder); `data/processed/` **không** materialize feature table — tính lại từ code rẻ hơn và không thể lệch với serving | Accepted | 5 |
+| ADR-014 | Chọn model bằng **validation log loss**; model cuối chỉ train trên tập train, để validation còn sạch cho việc tinh chỉnh policy ở Phase 6 | Accepted | 5 |
 
 ---
 

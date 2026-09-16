@@ -2,11 +2,11 @@
 
 | | |
 |---|---|
-| Version | 0.3 |
-| Phase | 0 — Product Definition |
+| Version | 0.4 |
+| Phase | 0 — Product Definition; §8.2 và Q2 cập nhật ở Phase 5 |
 | Status | Draft — chờ review |
 | Owner | @iamnmquang |
-| Last updated | 2026-09-15 |
+| Last updated | 2026-09-16 |
 
 > **Disclaimer.** SmartMatch AI là project **mô phỏng** phục vụ học tập. Toàn bộ dữ liệu là synthetic.
 > Hệ thống không dựa trên, không đại diện và không giả định kiến trúc hay logic production của bất kỳ công ty nào.
@@ -235,6 +235,7 @@ gửi cho hạng 2; tối đa `N` lượt (đề xuất `N = 3`).
 | **Acceptance Rate (AR)** | Số offer được chấp nhận / tổng số offer đã gửi. | ↑ |
 | **Average ETA** | ETA đón khách trung bình (phút) của tài xế **đã nhận chuyến**, tính trên các booking matched. | ↓ |
 | **Cancellation Rate (CR)** | % booking matched bị huỷ sau khi tài xế đã nhận. | ↓ |
+| **Completed Rate** | % booking được nhận **và** không bị huỷ, trên mọi booking. Kết hợp MSR và CR. | ↑ |
 
 Lưu ý khi đọc metric:
 
@@ -244,8 +245,12 @@ Lưu ý khi đọc metric:
 
 ### 8.2 North Star & guardrails
 
-- **North Star metric: Matching Success Rate** — booking được nhận là giá trị cốt lõi cho hành khách, tài xế và nền tảng.
-- **Guardrail metrics: Average ETA, Cancellation Rate** — ML không được "thắng" MSR bằng cách đẩy ETA lên quá cao
+- **North Star metrics: Matching Success Rate và Completed Rate** (cập nhật ở Phase 5) — booking được nhận là giá trị cốt lõi cho
+  hành khách, tài xế và nền tảng; nhưng một chuyến được nhận rồi huỷ không tạo ra giá trị đó.
+  Lý do nâng Completed Rate lên ngang hàng: kết quả Phase 4 cho thấy MSR gần như đã bão hoà (trần chỉ +1.2 pp so với Nearest Driver) và
+  policy tối đa hoá riêng khả năng nhận (Oracle) **không** làm tăng số chuyến hoàn thành — xem [evaluation.md §5](evaluation.md).
+  Khi hai metric mâu thuẫn, Completed Rate là metric quyết định.
+- **Guardrail metrics: Average ETA, Cancellation Rate** — ML không được "thắng" North Star bằng cách đẩy ETA lên quá cao
   hoặc ưu tiên tài xế nhận rồi huỷ.
 
 ### 8.3 Success criteria — giả thuyết, kiểm chứng ở Phase 6
@@ -253,6 +258,7 @@ Lưu ý khi đọc metric:
 | ID | Hypothesis |
 |---|---|
 | H1 | ML ranking đạt MSR cao hơn Nearest Driver trên cùng tập booking test. |
+| H1b | ML ranking đạt Completed Rate cao hơn Nearest Driver (bổ sung ở Phase 5 cùng với North Star thứ hai). |
 | H2 | Average ETA của ML không tăng quá **+15%** so với baseline (ngưỡng đề xuất — là quyết định product, có thể điều chỉnh). |
 | H3 | Cancellation Rate của ML không cao hơn baseline. |
 | H4 | ROC-AUC trên test tốt hơn rõ rệt so với random (0.5) nhưng không phi thực tế. Nếu > 0.95 → nghi ngờ leakage hoặc dữ liệu quá dễ, phải điều tra trước khi báo cáo. |
@@ -326,7 +332,7 @@ Nếu H1 không đạt, evaluation report ghi đúng như vậy.
 | # | Câu hỏi | Chốt ở |
 |---|---|---|
 | Q1 | ~~Pointwise classification (P(accept)) hay Learning-to-Rank?~~ **Đã chốt:** pointwise P(accept) + XGBoost; Learning-to-Rank là ablation — xem [research.md](research.md) | Phase 1 ✅ |
-| Q2 | Score cuối chỉ là P(accept) hay kết hợp cancellation/ETA? | Phase 5–6 |
+| Q2 | Score cuối chỉ là P(accept) hay kết hợp cancellation/ETA? **Phase 5 đã chốt phần model:** train một model P(accept) (không train model cancellation). Phần score: so sánh A (chỉ P(accept)) và B (P(accept) với ràng buộc ETA) trên validation ở Phase 6 — xem [research §10.7](research.md) | Phase 6 |
 | Q3 | "Hôm nay" nghĩa là gì với dữ liệu synthetic tĩnh (ngày mới nhất trong dataset, hay sinh dữ liệu tương đối theo ngày hiện tại)? | Phase 8, 10 |
 | Q4 | Matching chạy từ UI thì outcome (accepted/cancelled) đến từ đâu khi không có tài xế thật: mô phỏng bằng simulator hay chỉ lưu recommendation? | Phase 8–9 |
 | Q5 | Authentication: API key tĩnh hay JWT login cho admin? | Phase 9 |

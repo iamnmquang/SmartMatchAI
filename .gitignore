@@ -28,6 +28,7 @@ data/oracle/
 # ---- ML artifacts: commit policy decided in Phase 7 ----
 ml/models/*
 !ml/models/.gitkeep
+ml/training/artifacts/
 
 # ---- Frontend ----
 node_modules/
