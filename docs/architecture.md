@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Version | 0.5 |
-| Phase | 0 — Product Definition; cập nhật ở Phase 1, 2, 3, 5 |
+| Version | 0.6 |
+| Phase | 0 — Product Definition; cập nhật ở Phase 1, 2, 3, 5, 6 |
 | Status | Draft. Các mục đánh dấu **Proposed** sẽ được chốt ở phase tương ứng. |
 | Last updated | 2026-09-16 |
 
@@ -130,6 +130,9 @@ sequenceDiagram
     API-->>UI: 200 {booking_id, recommendations}
 ```
 
+Bước "sort, take top-K" áp dụng **ADR-015**: xếp theo P(accept) nhưng chỉ trong nhóm ứng viên có ETA ≤ ETA nhỏ nhất của booking + 1 phút;
+ứng viên ngoài nhóm xếp sau chứ không bị loại. Code dùng chung với offline: [`ml/evaluation/policies.py`](../ml/evaluation/policies.py).
+
 Ghi chú thiết kế (chốt ở Phase 8–9): với ~20k tài xế, lọc candidate bằng bounding box trên cột lat/lon có index rồi tính haversine chính xác
 là đủ nhanh — chưa cần PostGIS.
 
@@ -235,7 +238,7 @@ smartmatch-ai/
 │   ├── data/                     Generator, mô hình hành vi ẩn (P2), time-based split (P3)
 │   ├── features/                 view.py (cột được phép thấy) + build.py (ma trận feature), dùng chung train & serve (P5)
 │   ├── training/                 dataset, models, metrics, train CLI; results/ (commit), artifacts/ (gitignored) (P5)
-│   ├── evaluation/               Policies, offline dispatch replay, metrics, bootstrap; results/ (P4, P6)
+│   ├── evaluation/               Policies (rule + ML), replay, metrics, bootstrap, ablations; results/ (P4, P6)
 │   ├── inference/                predict.py (P7)
 │   └── models/                   Model artifacts + metadata (P7)
 ├── backend/
@@ -283,7 +286,7 @@ Version cụ thể được pin khi cài đặt ở từng phase (không ghi ver
 | Data / ML | pandas, NumPy, scikit-learn | Chuẩn cho tabular | Polars (nhanh hơn, ít tài liệu ML hơn) |
 | Data format | **Accepted (Phase 2):** Parquet (pyarrow) | Giữ kiểu dữ liệu (datetime, category, nullable), nén tốt, đọc nhanh | CSV (dễ mở nhưng mất kiểu dữ liệu, file lớn hơn) |
 | Notebook / EDA | **Accepted (Phase 3):** Jupyter notebook (ipykernel), kiểm chứng bằng `nbconvert --execute`; matplotlib | Đảm bảo notebook chạy lại được từ đầu đến cuối; ít dependency | seaborn (thêm dependency), plotly (notebook rất nặng) |
-| Model | **Accepted (Phase 1, đã train ở Phase 5):** pointwise `XGBClassifier` (xgboost 3.4.1) → P(accept), sort giảm dần; Logistic Regression làm mốc tuyến tính; fallback `HistGradientBoostingClassifier` không cần dùng. Trên validation, XGBoost chỉ hơn Logistic Regression +0.0007 ROC-AUC ([research §10.4](research.md)) — chốt model phục vụ ở Phase 6 | Sort theo P(accept) tối ưu MSR dưới giả định offer tuần tự; mạnh cho tabular; có sẵn TreeSHAP (`pred_contribs`) để giải thích — xem [research.md §6](research.md) | LightGBM (tương đương); `XGBRanker` (ablation ở Phase 5–6); deep learning; optimization-based (future work) |
+| Model | **Accepted (Phase 6):** **Logistic Regression** trên 28 feature → P(accept), xếp hạng trong ràng buộc ETA (ADR-015). XGBoost (xgboost 3.4.1) được train và so sánh song song: hơn ở metric ML (ROC-AUC 0.8847 vs 0.8833) nhưng không hơn ở business metric, nên model đơn giản hơn được chọn ([evaluation.md §4, §7](evaluation.md)) | Sort theo P(accept) tối ưu MSR dưới giả định offer tuần tự; mạnh cho tabular; có sẵn TreeSHAP (`pred_contribs`) để giải thích — xem [research.md §6](research.md) | LightGBM (tương đương); `XGBRanker` (ablation ở Phase 5–6); deep learning; optimization-based (future work) |
 | Serialization | **Proposed:** định dạng native của XGBoost + metadata JSON; joblib cho preprocessing của scikit-learn nếu có — chốt ở Phase 7 | Native format ổn định giữa các version hơn pickle | joblib/pickle cho toàn bộ (dễ vỡ khi đổi version thư viện) |
 | Explanation | **Proposed:** reason từ feature contribution + template — chốt ở Phase 7 | Deterministic, rẻ, không hallucinate | LLM tự viết reason (chậm, tốn tiền, có thể bịa) |
 | LLM | `LLMProvider` interface → `OpenAIProvider`, `MockLLMProvider`; model chọn qua env | Đổi provider/model không sửa application; test offline không tốn tiền | Gọi SDK trực tiếp khắp code (khoá chặt vào vendor) |
@@ -330,7 +333,7 @@ Nếu chọn pgvector, "vector-db" nằm chung container PostgreSQL.
 | ADR-004 | Provider abstraction cho LLM và embeddings | Accepted | 0 |
 | ADR-005 | Offline evaluation bằng simulator: cùng booking test, cùng mô hình outcome ẩn, cùng random numbers | Accepted (dữ liệu: P2; evaluation: P6) | 2, 6 |
 | ADR-006 | Pointwise P(accept) với XGBoost để ranking; Learning-to-Rank chỉ là ablation | Accepted | 1 |
-| ADR-007 | Reason deterministic từ model, không do LLM sinh | Proposed | 7 |
+| ADR-007 | Reason deterministic từ model, không do LLM sinh (với model tuyến tính của ADR-016: đóng góp = hệ số × giá trị feature đã chuẩn hoá, không cần TreeSHAP) | Proposed | 7 |
 | ADR-008 | pgvector thay vì Chroma | Proposed | 11 |
 | ADR-009 | Nginx serve React static build, không chạy Node ở production | Proposed | 15 |
 | ADR-010 | Synthetic data dạng snapshot theo từng booking; sự thật ẩn tách riêng trong `data/oracle/` | Accepted | 2 |
@@ -338,6 +341,8 @@ Nếu chọn pgvector, "vector-db" nằm chung container PostgreSQL.
 | ADR-012 | Đánh giá offline: replay offer tuần tự (N = 3) với common random numbers; metric là tỷ số của tổng theo booking; paired bootstrap 95% CI; so sánh với Random, Nearest Driver, Weighted rule, Oracle | Accepted | 4 |
 | ADR-013 | Feature engineering dùng chung qua `ml/features` (decision-time view + builder thuần, level phân loại cố định, không fit encoder); `data/processed/` **không** materialize feature table — tính lại từ code rẻ hơn và không thể lệch với serving | Accepted | 5 |
 | ADR-014 | Chọn model bằng **validation log loss**; model cuối chỉ train trên tập train, để validation còn sạch cho việc tinh chỉnh policy ở Phase 6 | Accepted | 5 |
+| ADR-015 | Score xếp hạng = P(accept) **trong ràng buộc ETA** (chỉ ưu tiên ứng viên có ETA ≤ nhanh nhất + Δ; Δ = 1 phút, chọn trên validation). Ứng viên ngoài ràng buộc bị đẩy xuống cuối chứ không bị loại, để không giảm MSR (PRD Q2, phương án B) | Accepted | 6 |
+| ADR-016 | Model phục vụ là **Logistic Regression**, không phải XGBoost: hơn kém nhau không đáng kể ở business metric, model tuyến tính rẻ và dễ giải thích hơn. XGBoost vẫn được train để đối chiếu và có thể thay thế bằng cách đổi artifact | Accepted | 6 |
 
 ---
 

@@ -3,6 +3,12 @@
 A policy maps a frame of candidates (decision-time columns only) to one score per row. Within a booking, higher scores
 are offered first and ties are broken by driver_id. Policies never see the simulator's hidden truth; the oracle upper
 bound lives in ml/evaluation/offline.py because it is the one exception.
+
+Phase 6 adds the two ML policies of PRD Q2:
+
+* **Option A** - rank by the model's P(accept) (`model_scores`).
+* **Option B** - rank by P(accept) but only among candidates whose pickup ETA is within a margin of the fastest
+  candidate of that booking (`apply_eta_constraint`). The margin is chosen on the validation split.
 """
 
 from __future__ import annotations
@@ -11,6 +17,8 @@ from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
+
+from ml.features import build_features
 
 Policy = Callable[[pd.DataFrame], np.ndarray]
 
@@ -51,5 +59,37 @@ def random_order(seed: int) -> Policy:
 
     def policy(candidates: pd.DataFrame) -> np.ndarray:
         return np.random.default_rng(seed).random(len(candidates))
+
+    return policy
+
+
+def model_scores(model, candidates: pd.DataFrame) -> np.ndarray:
+    """Option A: P(accept) of a trained model, computed through the feature code that training used."""
+    return model.predict_proba(build_features(candidates))[:, 1]
+
+
+def apply_eta_constraint(scores: np.ndarray, candidates: pd.DataFrame, max_extra_eta_min: float) -> np.ndarray:
+    """Option B: keep the order given by `scores`, but offer first only the candidates within
+    `max_extra_eta_min` minutes of the fastest candidate of the same booking.
+
+    Ineligible candidates are not dropped - dropping them would lower the matching success rate of bookings
+    where every eligible driver refuses. They are pushed behind every eligible one by a constant larger than
+    the whole score range, so the relative order inside each of the two groups is untouched.
+    A margin of infinity therefore reproduces option A exactly.
+    """
+    scores = np.asarray(scores, dtype=float)
+    if not np.isfinite(max_extra_eta_min):
+        return scores
+    eta = candidates["estimated_eta_min"].astype(float)
+    fastest = eta.groupby(candidates["booking_id"]).transform("min")
+    eligible = (eta <= fastest + max_extra_eta_min).to_numpy(dtype=float)
+    return scores + eligible * (float(scores.max() - scores.min()) + 1.0)
+
+
+def model_policy(model, max_extra_eta_min: float = float("inf")) -> Policy:
+    """A ready-to-use policy for the replay and, later, for serving."""
+
+    def policy(candidates: pd.DataFrame) -> np.ndarray:
+        return apply_eta_constraint(model_scores(model, candidates), candidates, max_extra_eta_min)
 
     return policy

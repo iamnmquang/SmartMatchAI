@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Version | 0.4 |
-| Phase | 0 — Product Definition; §8.2 và Q2 cập nhật ở Phase 5 |
+| Version | 0.5 |
+| Phase | 0 — Product Definition; §8.2 cập nhật ở Phase 5; §8.3 và Q2 kết luận ở Phase 6 |
 | Status | Draft — chờ review |
 | Owner | @iamnmquang |
 | Last updated | 2026-09-16 |
@@ -265,6 +265,10 @@ Lưu ý khi đọc metric:
 
 Nếu H1 không đạt, evaluation report ghi đúng như vậy.
 
+**Kết luận ở Phase 6** ([evaluation.md §8](evaluation.md)): H1 **đạt** (+0.89 pp), H1b **đạt** (+0.49 pp), H2 **đạt** (+2.0%),
+H4 **đạt** (ROC-AUC 0.8833) — riêng **H3 không đạt**: cancellation rate cao hơn baseline +0.34 pp, 95% CI [+0.02, +0.64].
+Nguyên nhân là T6 (model chỉ tối ưu `accepted`); cách xử lý đề xuất là phương án C của Q2.
+
 ### 8.4 ML metrics
 
 | Metric | Vai trò |
@@ -332,7 +336,7 @@ Nếu H1 không đạt, evaluation report ghi đúng như vậy.
 | # | Câu hỏi | Chốt ở |
 |---|---|---|
 | Q1 | ~~Pointwise classification (P(accept)) hay Learning-to-Rank?~~ **Đã chốt:** pointwise P(accept) + XGBoost; Learning-to-Rank là ablation — xem [research.md](research.md) | Phase 1 ✅ |
-| Q2 | Score cuối chỉ là P(accept) hay kết hợp cancellation/ETA? **Phase 5 đã chốt phần model:** train một model P(accept) (không train model cancellation). Phần score: so sánh A (chỉ P(accept)) và B (P(accept) với ràng buộc ETA) trên validation ở Phase 6 — xem [research §10.7](research.md) | Phase 6 |
+| Q2 | ~~Score cuối chỉ là P(accept) hay kết hợp cancellation/ETA?~~ **Đã chốt (Phase 6):** P(accept) **có ràng buộc ETA** (phương án B). Chỉ P(accept) (A) không làm tăng completed rate; ràng buộc ETA 1 phút cho +0.5 pp. Phương án C (thêm P(cancel)) là future work, có số đo về chi phí của việc hoãn nó — xem [evaluation.md §1, §7](evaluation.md) | Phase 6 ✅ |
 | Q3 | "Hôm nay" nghĩa là gì với dữ liệu synthetic tĩnh (ngày mới nhất trong dataset, hay sinh dữ liệu tương đối theo ngày hiện tại)? | Phase 8, 10 |
 | Q4 | Matching chạy từ UI thì outcome (accepted/cancelled) đến từ đâu khi không có tài xế thật: mô phỏng bằng simulator hay chỉ lưu recommendation? | Phase 8–9 |
 | Q5 | Authentication: API key tĩnh hay JWT login cho admin? | Phase 9 |

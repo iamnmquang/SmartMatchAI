@@ -29,6 +29,7 @@ from ml.evaluation.policies import (
     random_order,
     weighted_rule,
 )
+from ml.evaluation.report import policy_table
 
 REFERENCE = "nearest_driver"
 RANDOM_POLICY_SEED = 7
@@ -38,16 +39,6 @@ POLICY_DESCRIPTIONS = {
     "weighted_rule": "Secondary baseline: hand-set operations heuristic, weights fixed before evaluation.",
     "oracle": "Upper bound, not attainable: order by the simulator's true acceptance probability.",
 }
-TABLE_ROWS = [
-    ("matching_success_rate", "Matching success rate", "pct"),
-    ("acceptance_rate", "Acceptance rate (offer-level)", "pct"),
-    ("avg_eta_matched_min", "Average ETA of matched driver (min)", "min"),
-    ("p90_eta_matched_min", "P90 ETA of matched driver (min)", "min"),
-    ("cancellation_rate", "Cancellation rate", "pct"),
-    ("completed_rate", "Completed rate (matched, not cancelled)", "pct"),
-    ("first_offer_acceptance_rate", "First-offer acceptance rate", "pct"),
-    ("avg_offers_per_booking_with_candidates", "Offers per booking with candidates", "num"),
-]
 
 
 def evaluate_split(split: str, max_offers: int, n_resamples: int, seed: int) -> dict:
@@ -72,33 +63,6 @@ def evaluate_split(split: str, max_offers: int, n_resamples: int, seed: int) -> 
             for name, frame in outcomes.items()
         },
     }
-
-
-def markdown_table(result: dict) -> str:
-    names = list(result["policies"])
-    lines = ["| Metric | " + " | ".join(names) + " |", "|---" * (len(names) + 1) + "|"]
-    for key, label, kind in TABLE_ROWS:
-        cells = []
-        for name in names:
-            policy = result["policies"][name]
-            cell = _format_value(policy["metrics"][key], kind)
-            if name != REFERENCE and key in policy["bootstrap"]:
-                cell += f" (Δ {_format_interval(policy['bootstrap'][key]['diff_vs_reference_ci95'], kind)})"
-            cells.append(cell)
-        lines.append(f"| {label} | " + " | ".join(cells) + " |")
-    return "\n".join(lines)
-
-
-def _format_value(value: float, kind: str) -> str:
-    return {"pct": f"{100 * value:.1f}%", "min": f"{value:.2f}", "num": f"{value:.3f}"}[kind]
-
-
-def _format_interval(interval: list[float], kind: str) -> str:
-    low, high = interval
-    if kind == "pct":
-        return f"[{100 * low:+.1f}, {100 * high:+.1f}] pp"
-    digits = 2 if kind == "min" else 3
-    return f"[{low:+.{digits}f}, {high:+.{digits}f}]"
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -130,7 +94,7 @@ def main(argv: list[str] | None = None) -> None:
     for split, result in payload["splits"].items():
         print(f"\n### {split}: {result['n_bookings']:,} bookings "
               f"({result['n_bookings_with_candidates']:,} with candidates), {result['n_candidate_rows']:,} candidate rows\n")
-        print(markdown_table(result))
+        print(policy_table(result["policies"], REFERENCE))
     print(f"\nWrote {args.output}")
 
 

@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Version | 0.3 |
-| Phase | 1 — Research; §9 EDA findings: Phase 3; §10 training: Phase 5 |
+| Version | 0.4 |
+| Phase | 1 — Research; §9 EDA findings: Phase 3; §10 training: Phase 5 (kết quả Phase 6: [evaluation.md](evaluation.md)) |
 | Status | Done — chờ review |
 | Last updated | 2026-09-16 |
 
@@ -601,14 +601,14 @@ Hit@1 và NDCG@5 chỉ tính được trên **2,514 / 13,977 booking** của val
 Hơn nữa, các ứng viên có nhãn do logging policy chọn, không phải một mẫu ngẫu nhiên. Vì vậy hai con số này chỉ là **kiểm tra định hướng**;
 thước đo thứ hạng trung thực là replay dispatch ở Phase 6, nơi mọi ứng viên đều có outcome từ simulator.
 
-### 10.7 Hệ quả cho Phase 6
+### 10.7 Hệ quả cho Phase 6 — đã thực hiện
 
-| # | Việc |
-|---|---|
-| 1 | So sánh phương án A (score = P(accept)) và B (P(accept) trong ràng buộc ETA) trên validation, rồi chạy **một lần** trên test |
-| 2 | Đưa cả Logistic Regression vào bảng so sánh business metrics: nếu nó ngang XGBoost, kết luận phải nói rõ |
-| 3 | Chạy ablation AB2–AB5 (§7.5) trên validation |
-| 4 | H4 đạt: ROC-AUC 0.882 — cao hơn hẳn 0.5, thấp hơn ngưỡng nghi ngờ 0.95, và thấp hơn trần oracle 0.902 |
+| # | Việc | Kết quả ([evaluation.md](evaluation.md)) |
+|---|---|---|
+| 1 | So sánh phương án A và B trên validation, rồi chạy **một lần** trên test | **B thắng.** A không tăng completed rate; B (ràng buộc ETA 1 phút) cho +0.5 pp — evaluation §1, §3 |
+| 2 | Đưa cả Logistic Regression vào bảng so sánh business metrics | Logistic Regression **được chọn**: ngang XGBoost ở business metric dù thua nhẹ ở metric ML — evaluation §4, §7.5 |
+| 3 | Chạy ablation AB2–AB5 trên validation | Lịch sử tài xế là nhóm quan trọng nhất (AUC −0.039, Hit@1 0.62 → 0.31); context và relative feature gần như không đóng góp — evaluation §6 |
+| 4 | H4 đạt: ROC-AUC 0.882 trên validation | Test: 0.8833 — evaluation §5, §8 |
 
 ---
 

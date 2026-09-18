@@ -8,7 +8,9 @@ Mini production AI product (mô phỏng): **xếp hạng tài xế cho booking b
 
 ## Status
 
-**Phase 5 — Train ML Model: hoàn thành.** README đầy đủ (kết quả, screenshots, demo) sẽ được viết ở Phase 20.
+**Phase 6 — Evaluation & Benchmarking: hoàn thành.** Trên tập test, ML ranking đạt Matching Success Rate **86.5%**
+(baseline Nearest Driver 85.6%) và Completed Rate **75.9%** (75.5%), với ETA chỉ tăng 2.0% —
+chi tiết và giới hạn ở [evaluation.md](docs/evaluation.md). README đầy đủ (screenshots, demo) sẽ được viết ở Phase 20.
 
 ## Ý tưởng
 
@@ -40,7 +42,7 @@ mà không làm xấu guardrail metrics (xem [PRD §8](docs/product-requirements
 | [Research](docs/research.md) | Problem formulation, related work, so sánh 6 hướng matching, chọn baseline và ML approach, experiment design, EDA findings, kết quả training | 1, 3, 5 |
 | [Data](data/README.md) | Data policy, cách generate, schema, mô hình sinh dữ liệu, thống kê | 0, 2 |
 | [EDA notebook](notebooks/01_eda.ipynb) | Chất lượng dữ liệu, phân phối, outlier, confounding, selection bias, feature importance sơ bộ | 3 |
-| [Evaluation](docs/evaluation.md) | Protocol đánh giá offline, định nghĩa metric, kết quả baseline (Random, Nearest Driver, Weighted rule, Oracle) | 4 |
+| [Evaluation](docs/evaluation.md) | Protocol đánh giá offline, định nghĩa metric, chọn policy trên validation, **ML vs Baseline trên test**, ML metrics, ablation, kết luận giả thuyết | 4, 6 |
 | [Master prompt](docs/master-prompt.md) | Yêu cầu gốc của project (nguyên văn) — đối chiếu phạm vi, quy tắc và quy trình theo phase | — |
 | [Worklog](worklog-overview/) | Tổng kết công việc theo ngày — [2026-09-15](worklog-overview/2026-09-15.md): Phase 0–4 | — |
 
@@ -54,7 +56,7 @@ mà không làm xấu guardrail metrics (xem [PRD §8](docs/product-requirements
 | 3 | EDA | ✅ Done |
 | 4 | Baseline (Nearest Driver) | ✅ Done |
 | 5 | Train ML Model | ✅ Done |
-| 6 | Evaluation & Benchmarking | ⬜ |
+| 6 | Evaluation & Benchmarking | ✅ Done |
 | 7 | Model Serving | ⬜ |
 | 8 | PostgreSQL | ⬜ |
 | 9 | FastAPI | ⬜ |
@@ -107,6 +109,10 @@ jupyter nbconvert --to notebook --execute --inplace notebooks/01_eda.ipynb
 
 python -m ml.evaluation.run_baseline # Phase 4: đánh giá baseline → ml/evaluation/results/baseline.json
 python -m ml.training.train          # Phase 5: train P(accept) → ml/training/results/training.json
+
+# Phase 6: chọn policy trên validation, đo một lần trên test; ablation feature
+python -m ml.evaluation.run_evaluation
+python -m ml.evaluation.run_ablations
 ```
 
 Các bước tiếp theo sẽ được bổ sung theo từng phase.

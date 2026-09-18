@@ -26,17 +26,23 @@ import argparse
 import json
 from pathlib import Path
 
-import joblib
 import numpy as np
 
 from ml.features import FEATURE_COLUMNS
 from ml.training.dataset import DEFAULT_RAW_DIR, LabeledSplit, load_labeled_splits
 from ml.training.metrics import calibration_bins, calibration_by_eta, classification_metrics, ranking_metrics
-from ml.training.models import LINEAR_C_GRID, XGB_FIXED_PARAMS, fit_xgb, linear_pipeline, sample_xgb_params
+from ml.training.models import (
+    ARTIFACT_DIR,
+    LINEAR_C_GRID,
+    XGB_FIXED_PARAMS,
+    fit_xgb,
+    linear_pipeline,
+    sample_xgb_params,
+    save_models,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RESULTS_PATH = REPO_ROOT / "ml" / "training" / "results" / "training.json"
-ARTIFACT_DIR = REPO_ROOT / "ml" / "training" / "artifacts"
 TRAIN_SPLITS = ("train", "validation")  # the test split is out of bounds until Phase 6
 SELECTION_METRIC = "log_loss"
 TOP_IMPORTANCE = 15
@@ -203,10 +209,7 @@ def main(argv: list[str] | None = None) -> None:
     args.output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8", newline="\n")
 
     if not args.no_save:
-        args.artifact_dir.mkdir(parents=True, exist_ok=True)
-        # Native format, more stable across library versions than pickle; the serving contract is Phase 7.
-        xgboost.get_booster().save_model(args.artifact_dir / "xgboost_accept.json")
-        joblib.dump(linear, args.artifact_dir / "logistic_regression_accept.joblib")
+        save_models(linear, xgboost, args.artifact_dir)
         print(f"Saved fitted models to {args.artifact_dir} (serving format is decided in Phase 7)")
 
     print()

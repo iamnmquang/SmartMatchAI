@@ -1,0 +1,228 @@
+{
+  "experiment": "phase6-feature-ablations",
+  "settings": {
+    "split": "validation",
+    "policy": "option A (rank by P(accept))",
+    "model": "XGBoost with the hyperparameters selected in Phase 5",
+    "hyperparameters": {
+      "max_depth": 3,
+      "learning_rate": 0.040433,
+      "min_child_weight": 6.238108,
+      "subsample": 0.622903,
+      "colsample_bytree": 0.601098,
+      "reg_lambda": 1.072853,
+      "reg_alpha": 0.608612,
+      "gamma": 0.0
+    },
+    "seed": 5,
+    "max_offers": 3,
+    "feature_groups": {
+      "pair": [
+        "estimated_eta_min",
+        "distance_km",
+        "pickup_to_trip_ratio",
+        "trip_km"
+      ],
+      "relative": [
+        "distance_minus_min_km"
+      ],
+      "driver_history": [
+        "rating",
+        "has_rating",
+        "acceptance_rate",
+        "cancellation_rate",
+        "completed_trips",
+        "idle_time_min"
+      ],
+      "context": [
+        "hour",
+        "is_weekend",
+        "traffic_level=low",
+        "traffic_level=medium",
+        "traffic_level=high",
+        "weather=clear",
+        "weather=rain",
+        "weather=heavy_rain",
+        "time_of_day=night",
+        "time_of_day=morning_peak",
+        "time_of_day=midday",
+        "time_of_day=evening_peak",
+        "time_of_day=evening"
+      ],
+      "booking": [
+        "passenger_type=individual",
+        "passenger_type=group",
+        "vehicle_type=car_4",
+        "vehicle_type=car_7"
+      ]
+    }
+  },
+  "baseline_nearest_driver": {
+    "matching_success_rate": 0.837925,
+    "acceptance_rate": 0.596399,
+    "avg_eta_matched_min": 7.378059,
+    "cancellation_rate": 0.122698,
+    "completed_rate": 0.735114,
+    "first_offer_acceptance_rate": 0.701367,
+    "avg_offers_per_booking_with_candidates": 1.426486,
+    "p50_eta_matched_min": 6.62,
+    "p90_eta_matched_min": 12.78
+  },
+  "runs": [
+    {
+      "name": "full",
+      "description": "Every feature (reference for this table)",
+      "n_features": 28,
+      "features_removed": [],
+      "n_trees": 429,
+      "roc_auc": 0.881777,
+      "log_loss": 0.426404,
+      "hit_at_1": 0.621321,
+      "business": {
+        "matching_success_rate": 0.848848,
+        "acceptance_rate": 0.640098,
+        "avg_eta_matched_min": 8.263008,
+        "cancellation_rate": 0.136643,
+        "completed_rate": 0.732859,
+        "first_offer_acceptance_rate": 0.757459,
+        "avg_offers_per_booking_with_candidates": 1.346426,
+        "p50_eta_matched_min": 7.78,
+        "p90_eta_matched_min": 13.85
+      }
+    },
+    {
+      "name": "AB2_no_driver_history",
+      "description": "Drop driver history and idle time",
+      "n_features": 22,
+      "features_removed": [
+        "idle_time_min",
+        "rating",
+        "acceptance_rate",
+        "cancellation_rate",
+        "completed_trips",
+        "has_rating"
+      ],
+      "n_trees": 327,
+      "roc_auc": 0.842809,
+      "log_loss": 0.482569,
+      "hit_at_1": 0.307478,
+      "business": {
+        "matching_success_rate": 0.840321,
+        "acceptance_rate": 0.601028,
+        "avg_eta_matched_min": 7.352482,
+        "cancellation_rate": 0.1226,
+        "completed_rate": 0.737298,
+        "first_offer_acceptance_rate": 0.703871,
+        "avg_offers_per_booking_with_candidates": 1.419546,
+        "p50_eta_matched_min": 6.59,
+        "p90_eta_matched_min": 12.74
+      }
+    },
+    {
+      "name": "AB3_no_context",
+      "description": "Drop traffic, weather and time of day",
+      "n_features": 15,
+      "features_removed": [
+        "hour",
+        "is_weekend",
+        "traffic_level=low",
+        "traffic_level=medium",
+        "traffic_level=high",
+        "weather=clear",
+        "weather=rain",
+        "weather=heavy_rain",
+        "time_of_day=night",
+        "time_of_day=morning_peak",
+        "time_of_day=midday",
+        "time_of_day=evening_peak",
+        "time_of_day=evening"
+      ],
+      "n_trees": 534,
+      "roc_auc": 0.879157,
+      "log_loss": 0.430828,
+      "hit_at_1": 0.613763,
+      "business": {
+        "matching_success_rate": 0.84913,
+        "acceptance_rate": 0.640276,
+        "avg_eta_matched_min": 8.275652,
+        "cancellation_rate": 0.135768,
+        "completed_rate": 0.733845,
+        "first_offer_acceptance_rate": 0.757816,
+        "avg_offers_per_booking_with_candidates": 1.346498,
+        "p50_eta_matched_min": 7.8,
+        "p90_eta_matched_min": 13.83
+      }
+    },
+    {
+      "name": "AB4_distance_eta_only",
+      "description": "Only pickup distance and ETA",
+      "n_features": 2,
+      "features_removed": [
+        "idle_time_min",
+        "trip_km",
+        "pickup_to_trip_ratio",
+        "distance_minus_min_km",
+        "rating",
+        "acceptance_rate",
+        "cancellation_rate",
+        "completed_trips",
+        "hour",
+        "has_rating",
+        "is_weekend",
+        "traffic_level=low",
+        "traffic_level=medium",
+        "traffic_level=high",
+        "weather=clear",
+        "weather=rain",
+        "weather=heavy_rain",
+        "time_of_day=night",
+        "time_of_day=morning_peak",
+        "time_of_day=midday",
+        "time_of_day=evening_peak",
+        "time_of_day=evening",
+        "passenger_type=individual",
+        "passenger_type=group",
+        "vehicle_type=car_4",
+        "vehicle_type=car_7"
+      ],
+      "n_trees": 901,
+      "roc_auc": 0.831904,
+      "log_loss": 0.497061,
+      "hit_at_1": 0.358393,
+      "business": {
+        "matching_success_rate": 0.839969,
+        "acceptance_rate": 0.599628,
+        "avg_eta_matched_min": 7.366487,
+        "cancellation_rate": 0.122148,
+        "completed_rate": 0.737369,
+        "first_offer_acceptance_rate": 0.701367,
+        "avg_offers_per_booking_with_candidates": 1.422265,
+        "p50_eta_matched_min": 6.63,
+        "p90_eta_matched_min": 12.721
+      }
+    },
+    {
+      "name": "AB5_no_relative",
+      "description": "Drop the in-booking relative feature",
+      "n_features": 27,
+      "features_removed": [
+        "distance_minus_min_km"
+      ],
+      "n_trees": 582,
+      "roc_auc": 0.881984,
+      "log_loss": 0.426166,
+      "hit_at_1": 0.623309,
+      "business": {
+        "matching_success_rate": 0.849059,
+        "acceptance_rate": 0.640019,
+        "avg_eta_matched_min": 8.281428,
+        "cancellation_rate": 0.136194,
+        "completed_rate": 0.733423,
+        "first_offer_acceptance_rate": 0.75753,
+        "avg_offers_per_booking_with_candidates": 1.346927,
+        "p50_eta_matched_min": 7.8,
+        "p90_eta_matched_min": 13.88
+      }
+    }
+  ]
+}

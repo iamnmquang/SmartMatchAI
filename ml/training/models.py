@@ -14,6 +14,9 @@ Ablation AB1 of docs/research.md §7.5 is exactly the comparison between the two
 
 from __future__ import annotations
 
+from pathlib import Path
+
+import joblib
 import numpy as np
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
@@ -72,3 +75,23 @@ def fit_xgb(params: dict, seed: int, X_train, y_train, X_validation, y_validatio
 
 def _loguniform(rng: np.random.Generator, low: float, high: float) -> float:
     return float(np.exp(rng.uniform(np.log(low), np.log(high))))
+
+
+# Working files for the offline pipeline, not the serving contract: how the backend loads a model, and whether
+# the artifact is committed or built, is decided in Phase 7 (AQ1, AQ2). XGBoost gets its own JSON format rather
+# than pickle because it stays readable across library versions.
+ARTIFACT_DIR = Path(__file__).resolve().parents[2] / "ml" / "training" / "artifacts"
+XGB_FILE = "xgboost_accept.json"
+LINEAR_FILE = "logistic_regression_accept.joblib"
+
+
+def save_models(linear, xgb, directory: Path) -> None:
+    directory.mkdir(parents=True, exist_ok=True)
+    xgb.save_model(directory / XGB_FILE)
+    joblib.dump(linear, directory / LINEAR_FILE)
+
+
+def load_models(directory: Path) -> dict[str, object]:
+    xgb = XGBClassifier()
+    xgb.load_model(directory / XGB_FILE)
+    return {"logistic_regression": joblib.load(directory / LINEAR_FILE), "xgboost": xgb}
