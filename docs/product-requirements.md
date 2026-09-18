@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Version | 0.5 |
-| Phase | 0 — Product Definition; §8.2 cập nhật ở Phase 5; §8.3 và Q2 kết luận ở Phase 6 |
+| Version | 0.6 |
+| Phase | 0 — Product Definition; §8.2 cập nhật ở Phase 5; §8.3 và Q2 kết luận ở Phase 6; Q7 ở Phase 7 |
 | Status | Draft — chờ review |
 | Owner | @iamnmquang |
 | Last updated | 2026-09-16 |
@@ -206,10 +206,10 @@ Priority: **M** = Must (MVP) · **S** = Should · **C** = Could.
 
 | ID | Loại | Requirement | Kiểm chứng |
 |---|---|---|---|
-| NFR-01 | Performance | `POST /matching` P95 < 300 ms trên máy dev với ≤ 50 candidates (target, không gồm LLM). | Benchmark — Phase 17, 20 |
+| NFR-01 | Performance | `POST /matching` P95 < 300 ms trên máy dev với ≤ 50 candidates (target, không gồm LLM). | Benchmark — Phase 17, 20. Đo sớm ở Phase 7: riêng phần ranking 30 ms P50 / 37 ms P95 với 50 candidate ([research §7.6](research.md)) |
 | NFR-02 | Performance | `POST /chat` P95 < 15 s (phụ thuộc LLM provider; target). | Benchmark — Phase 20 |
 | NFR-03 | Reproducibility | Cùng code + seed + config → cùng dataset và cùng metric (nondeterminism của thư viện nếu có phải được ghi chú). | Chạy lại pipeline |
-| NFR-04 | Explainability | `reason` được sinh **deterministic** từ feature/model, không phải do LLM tự nghĩ. | Test |
+| NFR-04 | Explainability | `reason` được sinh **deterministic** từ feature/model, không phải do LLM tự nghĩ. | Test — đạt ở Phase 7: contribution = hệ số × feature chuẩn hoá, có test kiểm tổng contribution = log-odds của score |
 | NFR-05 | Security | Không hard-code secret; secret chỉ nằm trong `.env` (không commit). | Review + `git check-ignore` |
 | NFR-06 | Security | LLM không bao giờ sinh hoặc chạy raw SQL; chỉ gọi hàm định nghĩa trước có validate tham số. | Agent tests |
 | NFR-07 | Security | Nội dung tài liệu retrieve được không thể override system instruction. | Prompt-injection tests |
@@ -341,7 +341,7 @@ Nguyên nhân là T6 (model chỉ tối ưu `accepted`); cách xử lý đề xu
 | Q4 | Matching chạy từ UI thì outcome (accepted/cancelled) đến từ đâu khi không có tài xế thật: mô phỏng bằng simulator hay chỉ lưu recommendation? | Phase 8–9 |
 | Q5 | Authentication: API key tĩnh hay JWT login cho admin? | Phase 9 |
 | Q6 | Vector store: pgvector hay Chroma (đề xuất: pgvector)? | Phase 11 |
-| Q7 | Commit model artifact vào git hay train trong bước build? | Phase 7, 15 |
+| Q7 | ~~Commit model artifact vào git hay train trong bước build?~~ **Đã chốt (Phase 7):** commit artifact JSON 5.7 KB trong `ml/models/`; build không cần sinh dữ liệu và train — xem architecture ADR-018 | Phase 7 ✅ |
 | Q8 | ~~Training labels chỉ có cho tài xế đã được offer hay có cho mọi candidate?~~ **Đã chốt:** cả hai — log thực tế (nearest-first + 20% exploration) cho training; `data/oracle/` có outcome cho mọi candidate, chỉ dành cho evaluation — xem [data/README.md](../data/README.md) | Phase 2 ✅ |
 | Q9 | ~~Có thêm baseline phụ (weighted rule score) và dòng Oracle (upper bound từ mô hình ẩn) vào evaluation không?~~ **Đã chốt:** có, cùng Random làm mức sàn — xem [evaluation.md](evaluation.md) | Phase 4 ✅ |
 

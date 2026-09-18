@@ -25,9 +25,9 @@ data/processed/*
 !data/processed/.gitkeep
 data/oracle/
 
-# ---- ML artifacts: commit policy decided in Phase 7 ----
-ml/models/*
-!ml/models/.gitkeep
+# ---- ML artifacts ----
+# ml/models/ IS committed (ADR-018): the serving artifact is small, textual and reviewable in a diff.
+# ml/training/artifacts/ is not: those are the fitted objects the export reads, reproducible by training.
 ml/training/artifacts/
 
 # ---- Frontend ----

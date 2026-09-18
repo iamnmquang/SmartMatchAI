@@ -8,7 +8,8 @@ Phase 6 adds the two ML policies of PRD Q2:
 
 * **Option A** - rank by the model's P(accept) (`model_scores`).
 * **Option B** - rank by P(accept) but only among candidates whose pickup ETA is within a margin of the fastest
-  candidate of that booking (`apply_eta_constraint`). The margin is chosen on the validation split.
+  candidate of that booking. The margin is chosen on the validation split, and the rule itself lives in
+  ml/inference/ranking.py because serving applies it too.
 """
 
 from __future__ import annotations
@@ -19,8 +20,14 @@ import numpy as np
 import pandas as pd
 
 from ml.features import build_features
+from ml.inference.ranking import apply_eta_constraint
 
 Policy = Callable[[pd.DataFrame], np.ndarray]
+
+__all__ = [
+    "IDLE_CAP_MIN", "Policy", "RATING_PRIOR", "WEIGHTED_RULE_WEIGHTS", "apply_eta_constraint", "model_policy",
+    "model_scores", "nearest_driver", "random_order", "weighted_rule",
+]
 
 # Weights of the hand-written rule, fixed BEFORE any evaluation was run and never tuned on results.
 # Unit: points. One minute of pickup ETA costs 0.2 points, so +10 percentage points of historical acceptance
@@ -66,24 +73,6 @@ def random_order(seed: int) -> Policy:
 def model_scores(model, candidates: pd.DataFrame) -> np.ndarray:
     """Option A: P(accept) of a trained model, computed through the feature code that training used."""
     return model.predict_proba(build_features(candidates))[:, 1]
-
-
-def apply_eta_constraint(scores: np.ndarray, candidates: pd.DataFrame, max_extra_eta_min: float) -> np.ndarray:
-    """Option B: keep the order given by `scores`, but offer first only the candidates within
-    `max_extra_eta_min` minutes of the fastest candidate of the same booking.
-
-    Ineligible candidates are not dropped - dropping them would lower the matching success rate of bookings
-    where every eligible driver refuses. They are pushed behind every eligible one by a constant larger than
-    the whole score range, so the relative order inside each of the two groups is untouched.
-    A margin of infinity therefore reproduces option A exactly.
-    """
-    scores = np.asarray(scores, dtype=float)
-    if not np.isfinite(max_extra_eta_min):
-        return scores
-    eta = candidates["estimated_eta_min"].astype(float)
-    fastest = eta.groupby(candidates["booking_id"]).transform("min")
-    eligible = (eta <= fastest + max_extra_eta_min).to_numpy(dtype=float)
-    return scores + eligible * (float(scores.max() - scores.min()) + 1.0)
 
 
 def model_policy(model, max_extra_eta_min: float = float("inf")) -> Policy:

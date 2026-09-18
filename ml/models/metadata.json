@@ -1,0 +1,92 @@
+{
+  "model_version": "1.0.0",
+  "model_type": "logistic_regression",
+  "target": "accepted",
+  "n_features": 28,
+  "features": [
+    "estimated_eta_min",
+    "distance_km",
+    "idle_time_min",
+    "trip_km",
+    "pickup_to_trip_ratio",
+    "distance_minus_min_km",
+    "rating",
+    "acceptance_rate",
+    "cancellation_rate",
+    "completed_trips",
+    "hour",
+    "has_rating",
+    "is_weekend",
+    "traffic_level=low",
+    "traffic_level=medium",
+    "traffic_level=high",
+    "weather=clear",
+    "weather=rain",
+    "weather=heavy_rain",
+    "time_of_day=night",
+    "time_of_day=morning_peak",
+    "time_of_day=midday",
+    "time_of_day=evening_peak",
+    "time_of_day=evening",
+    "passenger_type=individual",
+    "passenger_type=group",
+    "vehicle_type=car_4",
+    "vehicle_type=car_7"
+  ],
+  "policy": {
+    "type": "rank by P(accept) within an ETA margin",
+    "max_extra_eta_min": 1.0,
+    "decision": "ADR-015",
+    "note": "candidates outside the margin are ranked last, never dropped"
+  },
+  "training": {
+    "generator_version": "1.0.0",
+    "data_seed": 42,
+    "train_split": "train",
+    "tuning_split": "validation",
+    "seed": 5,
+    "hyperparameters": {
+      "C": 1.0
+    }
+  },
+  "metrics": {
+    "validation_offers": {
+      "roc_auc": 0.881032,
+      "pr_auc": 0.886828,
+      "log_loss": 0.427726,
+      "brier": 0.137952,
+      "precision_at_0.5": 0.795604,
+      "recall_at_0.5": 0.851624,
+      "f1_at_0.5": 0.822661
+    },
+    "test_offers": {
+      "roc_auc": 0.883343,
+      "pr_auc": 0.89719,
+      "log_loss": 0.420074,
+      "brier": 0.134975,
+      "precision_at_0.5": 0.809824,
+      "recall_at_0.5": 0.863245,
+      "f1_at_0.5": 0.835682
+    },
+    "test_business": {
+      "matching_success_rate": 0.865051,
+      "acceptance_rate": 0.64218,
+      "avg_eta_matched_min": 7.427183,
+      "cancellation_rate": 0.122099,
+      "completed_rate": 0.759429
+    },
+    "test_business_baseline_nearest_driver": {
+      "matching_success_rate": 0.856159,
+      "acceptance_rate": 0.620969,
+      "avg_eta_matched_min": 7.284527,
+      "cancellation_rate": 0.118677,
+      "completed_rate": 0.754553
+    }
+  },
+  "reproduce": [
+    "python -m ml.data.generate",
+    "python -m ml.training.train",
+    "python -m ml.evaluation.run_evaluation",
+    "python -m ml.inference.export"
+  ]
+}

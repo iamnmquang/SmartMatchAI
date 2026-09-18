@@ -353,10 +353,28 @@ Mỗi ablation chỉ thay đổi **một** yếu tố; cùng split, cùng seed.
 | AB6 | `XGBClassifier` vs `XGBRanker` | LTR có tốt hơn khi đủ nhãn không? | C (phụ thuộc Q8) |
 | AB7 | Score = $\hat{p}$ vs utility có ETA / cancellation | Trade-off MSR – ETA – CR (PRD Q2) | S |
 
-### 7.6 Latency benchmarking (preview Phase 17, 20)
+### 7.6 Latency benchmarking — kết quả Phase 7
 
-Đo inference cho một booking với 10 / 20 / 50 candidates, báo cáo P50 / P95 / P99, tách riêng: build feature, predict, tính SHAP
-(`pred_contribs` tốn thêm thời gian so với predict thường).
+Đo bằng `python -m ml.inference.benchmark` (200 request mỗi kích thước, đo **xen kẽ** các kích thước để mọi nhóm gặp cùng điều kiện máy;
+nguồn: [`ml/inference/results/latency.json`](../ml/inference/results/latency.json)). Máy dev Windows 11, i7-12700H.
+
+| Candidate | build_view | build_features | predict | explain | **Tổng P50** | Tổng P95 | Tổng P99 |
+|---|---|---|---|---|---|---|---|
+| 10 | 6.25 | 17.73 | 1.88 | 3.83 | **29.78 ms** | 37.12 | 64.95 |
+| 20 | 6.29 | 17.66 | 1.93 | 3.81 | **29.97 ms** | 41.43 | 61.87 |
+| 50 | 6.38 | 17.76 | 1.94 | 3.83 | **30.14 ms** | 36.57 | 60.43 |
+
+(Cột stage là P50, đơn vị ms. Không booking nào trong tập test có 50 ứng viên — nhiều nhất 28 — nên kích thước 50 được tạo bằng cách
+lặp lại ứng viên; latency phụ thuộc số dòng chứ không phụ thuộc giá trị.)
+
+Ba điều rút ra:
+
+1. **Latency gần như không phụ thuộc số ứng viên** (+0.36 ms khi đi từ 10 lên 50). Chi phí là overhead cố định của pandas cho mỗi lần gọi,
+   không phải phép toán trên dữ liệu — `predict` chỉ mất 1.9 ms cho một tích ma trận với 28 hệ số.
+2. **`build_features` chiếm ~59% thời gian.** Nếu Phase 17 cần nhanh hơn, đường tối ưu rõ ràng là dựng feature bằng numpy thuần cho
+   nhánh serving (vẫn dùng chung định nghĩa), chứ không phải đổi model.
+3. **Còn rất nhiều budget so với NFR-01** (P95 < 300 ms cho cả endpoint với ≤ 50 ứng viên): phần ranking chiếm ~37 ms P95, phần còn lại
+   dành cho DB và HTTP ở Phase 9.
 
 ---
 

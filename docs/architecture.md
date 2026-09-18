@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Version | 0.6 |
-| Phase | 0 — Product Definition; cập nhật ở Phase 1, 2, 3, 5, 6 |
+| Version | 0.7 |
+| Phase | 0 — Product Definition; cập nhật ở Phase 1, 2, 3, 5, 6, 7 |
 | Status | Draft. Các mục đánh dấu **Proposed** sẽ được chốt ở phase tương ứng. |
-| Last updated | 2026-09-16 |
+| Last updated | 2026-09-18 |
 
 Tài liệu liên quan: [Product Requirements](product-requirements.md) · [Research](research.md).
 
@@ -93,8 +93,9 @@ flowchart LR
     B --> C["ml/features<br/>decision-time view + feature matrix<br/>(shared with serving)"]
     C --> E["ml/training<br/>train + tune (train / validation)"]
     E --> F["ml/evaluation<br/>test set: Baseline vs ML"]
-    F --> G["ml/models<br/>artifact + metadata"]
-    G --> H["scripts<br/>seed DB + register model version"]
+    F --> X["ml/inference/export<br/>coefficients -> JSON"]
+    X --> G["ml/models<br/>artifact + metadata (committed)"]
+    G --> H["ml/inference/predict<br/>backend imports this"]
 ```
 
 **Training-serving skew.** Code feature engineering trong `ml/features` phải được **dùng chung** cho cả training và online inference.
@@ -239,8 +240,8 @@ smartmatch-ai/
 │   ├── features/                 view.py (cột được phép thấy) + build.py (ma trận feature), dùng chung train & serve (P5)
 │   ├── training/                 dataset, models, metrics, train CLI; results/ (commit), artifacts/ (gitignored) (P5)
 │   ├── evaluation/               Policies (rule + ML), replay, metrics, bootstrap, ablations; results/ (P4, P6)
-│   ├── inference/                predict.py (P7)
-│   └── models/                   Model artifacts + metadata (P7)
+│   ├── inference/                artifact (JSON), ranking rule, predict, export, benchmark; results/ (P7)
+│   └── models/                   Serving artifact + metadata — **được commit** (ADR-018, P7)
 ├── backend/
 │   ├── app/
 │   │   ├── main.py               FastAPI app (P9)
@@ -287,8 +288,8 @@ Version cụ thể được pin khi cài đặt ở từng phase (không ghi ver
 | Data format | **Accepted (Phase 2):** Parquet (pyarrow) | Giữ kiểu dữ liệu (datetime, category, nullable), nén tốt, đọc nhanh | CSV (dễ mở nhưng mất kiểu dữ liệu, file lớn hơn) |
 | Notebook / EDA | **Accepted (Phase 3):** Jupyter notebook (ipykernel), kiểm chứng bằng `nbconvert --execute`; matplotlib | Đảm bảo notebook chạy lại được từ đầu đến cuối; ít dependency | seaborn (thêm dependency), plotly (notebook rất nặng) |
 | Model | **Accepted (Phase 6):** **Logistic Regression** trên 28 feature → P(accept), xếp hạng trong ràng buộc ETA (ADR-015). XGBoost (xgboost 3.4.1) được train và so sánh song song: hơn ở metric ML (ROC-AUC 0.8847 vs 0.8833) nhưng không hơn ở business metric, nên model đơn giản hơn được chọn ([evaluation.md §4, §7](evaluation.md)) | Sort theo P(accept) tối ưu MSR dưới giả định offer tuần tự; mạnh cho tabular; có sẵn TreeSHAP (`pred_contribs`) để giải thích — xem [research.md §6](research.md) | LightGBM (tương đương); `XGBRanker` (ablation ở Phase 5–6); deep learning; optimization-based (future work) |
-| Serialization | **Proposed:** định dạng native của XGBoost + metadata JSON; joblib cho preprocessing của scikit-learn nếu có — chốt ở Phase 7 | Native format ổn định giữa các version hơn pickle | joblib/pickle cho toàn bộ (dễ vỡ khi đổi version thư viện) |
-| Explanation | **Proposed:** reason từ feature contribution + template — chốt ở Phase 7 | Deterministic, rẻ, không hallucinate | LLM tự viết reason (chậm, tốn tiền, có thể bịa) |
+| Serialization | **Accepted (Phase 7):** hệ số + tham số preprocessing ghi thẳng ra **JSON** (`ml/models/acceptance_model.json`, 3.4 KB) | Model tuyến tính chỉ gồm vài chục số; JSON không phụ thuộc version thư viện, đọc được trong diff, và serving không cần scikit-learn | joblib/pickle (vỡ khi đổi version); native XGBoost (chỉ cần nếu quay lại model cây) |
+| Explanation | **Accepted (Phase 7):** contribution = hệ số × giá trị đã chuẩn hoá (đơn vị log-odds) + template câu | Deterministic, ~3.8 ms cho Top-5, cộng lại đúng bằng log-odds của score nên kiểm chứng được | TreeSHAP (chỉ cần cho model cây); LLM tự viết reason (chậm, tốn tiền, có thể bịa) |
 | LLM | `LLMProvider` interface → `OpenAIProvider`, `MockLLMProvider`; model chọn qua env | Đổi provider/model không sửa application; test offline không tốn tiền | Gọi SDK trực tiếp khắp code (khoá chặt vào vendor) |
 | Embeddings | `EmbeddingProvider` → OpenAI embeddings, deterministic mock | Cùng lý do; không kéo PyTorch vào Docker image | sentence-transformers local (miễn phí, nhưng image nặng thêm cỡ GB) |
 | Vector store | **Proposed:** pgvector trong cùng PostgreSQL — chốt ở Phase 11 | Một DB thay vì hai service; migration và backup chung; knowledge base rất nhỏ | Chroma (API Python đơn giản, nhưng thêm service, volume, backup) |
@@ -333,7 +334,7 @@ Nếu chọn pgvector, "vector-db" nằm chung container PostgreSQL.
 | ADR-004 | Provider abstraction cho LLM và embeddings | Accepted | 0 |
 | ADR-005 | Offline evaluation bằng simulator: cùng booking test, cùng mô hình outcome ẩn, cùng random numbers | Accepted (dữ liệu: P2; evaluation: P6) | 2, 6 |
 | ADR-006 | Pointwise P(accept) với XGBoost để ranking; Learning-to-Rank chỉ là ablation | Accepted | 1 |
-| ADR-007 | Reason deterministic từ model, không do LLM sinh (với model tuyến tính của ADR-016: đóng góp = hệ số × giá trị feature đã chuẩn hoá, không cần TreeSHAP) | Proposed | 7 |
+| ADR-007 | Reason deterministic từ model, không do LLM sinh: đóng góp = hệ số × giá trị feature đã chuẩn hoá, tổng lại bằng log-odds của score | **Accepted** | 7 |
 | ADR-008 | pgvector thay vì Chroma | Proposed | 11 |
 | ADR-009 | Nginx serve React static build, không chạy Node ở production | Proposed | 15 |
 | ADR-010 | Synthetic data dạng snapshot theo từng booking; sự thật ẩn tách riêng trong `data/oracle/` | Accepted | 2 |
@@ -343,6 +344,8 @@ Nếu chọn pgvector, "vector-db" nằm chung container PostgreSQL.
 | ADR-014 | Chọn model bằng **validation log loss**; model cuối chỉ train trên tập train, để validation còn sạch cho việc tinh chỉnh policy ở Phase 6 | Accepted | 5 |
 | ADR-015 | Score xếp hạng = P(accept) **trong ràng buộc ETA** (chỉ ưu tiên ứng viên có ETA ≤ nhanh nhất + Δ; Δ = 1 phút, chọn trên validation). Ứng viên ngoài ràng buộc bị đẩy xuống cuối chứ không bị loại, để không giảm MSR (PRD Q2, phương án B) | Accepted | 6 |
 | ADR-016 | Model phục vụ là **Logistic Regression**, không phải XGBoost: hơn kém nhau không đáng kể ở business metric, model tuyến tính rẻ và dễ giải thích hơn. XGBoost vẫn được train để đối chiếu và có thể thay thế bằng cách đổi artifact | Accepted | 6 |
+| ADR-017 | `ml` là package top-level, import trực tiếp với **repository root làm working directory**; mọi CLI chạy bằng `python -m ...`. Không đóng gói, không sửa `PYTHONPATH`, không copy code. Nếu sau này backend và `ml` phải deploy tách nhau thì mới đóng gói (đóng AQ1) | Accepted | 7 |
+| ADR-018 | **Commit** serving artifact (`ml/models/*.json`) thay vì train trong bước build: 5.7 KB text, review được trong diff, image build không cần sinh dữ liệu và train (đóng AQ2 / PRD Q7). `ml/training/artifacts/` (object đã fit) vẫn không commit | Accepted | 7 |
 
 ---
 
@@ -350,8 +353,8 @@ Nếu chọn pgvector, "vector-db" nằm chung container PostgreSQL.
 
 | # | Câu hỏi | Chốt ở |
 |---|---|---|
-| AQ1 | Backend import code `ml/features` và `ml/inference` như thế nào (package cài được vs `PYTHONPATH`)? | Phase 7 |
-| AQ2 | Commit model artifact hay train trong bước build? | Phase 7, 15 |
+| ~~AQ1~~ | ~~Backend import code `ml/features` và `ml/inference` như thế nào?~~ **Đã chốt:** package top-level + working directory là repo root (ADR-017) | Phase 7 ✅ |
+| ~~AQ2~~ | ~~Commit model artifact hay train trong bước build?~~ **Đã chốt:** commit artifact JSON (ADR-018) | Phase 7 ✅ |
 | AQ3 | Dùng `LLMProvider` riêng bên trong node LangGraph (provider-agnostic, tự viết tool dispatch) hay dùng chat model của LangChain (tiện hơn, phụ thuộc hệ sinh thái LangChain)? | Phase 10, 12 |
 | AQ4 | Vị trí package provider: `backend/app/llm/` (đề xuất) hay trong `core/`? | Phase 10 |
 | AQ5 | Authentication: API key tĩnh vs JWT | Phase 9 |

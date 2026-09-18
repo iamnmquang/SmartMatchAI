@@ -8,9 +8,11 @@ Mini production AI product (mô phỏng): **xếp hạng tài xế cho booking b
 
 ## Status
 
-**Phase 6 — Evaluation & Benchmarking: hoàn thành.** Trên tập test, ML ranking đạt Matching Success Rate **86.5%**
-(baseline Nearest Driver 85.6%) và Completed Rate **75.9%** (75.5%), với ETA chỉ tăng 2.0% —
-chi tiết và giới hạn ở [evaluation.md](docs/evaluation.md). README đầy đủ (screenshots, demo) sẽ được viết ở Phase 20.
+**Phase 7 — Model Serving: hoàn thành.** Model đã có artifact JSON commit trong [`ml/models/`](ml/models/) và
+entry point [`ml/inference/predict.py`](ml/inference/predict.py) xếp hạng một booking trong ~30 ms (50 ứng viên), kèm
+reason deterministic. Kết quả chất lượng ở Phase 6: Matching Success Rate **86.5%** (baseline Nearest Driver 85.6%),
+Completed Rate **75.9%** (75.5%), ETA chỉ tăng 2.0% — chi tiết và giới hạn ở [evaluation.md](docs/evaluation.md).
+README đầy đủ (screenshots, demo) sẽ được viết ở Phase 20.
 
 ## Ý tưởng
 
@@ -44,7 +46,7 @@ mà không làm xấu guardrail metrics (xem [PRD §8](docs/product-requirements
 | [EDA notebook](notebooks/01_eda.ipynb) | Chất lượng dữ liệu, phân phối, outlier, confounding, selection bias, feature importance sơ bộ | 3 |
 | [Evaluation](docs/evaluation.md) | Protocol đánh giá offline, định nghĩa metric, chọn policy trên validation, **ML vs Baseline trên test**, ML metrics, ablation, kết luận giả thuyết | 4, 6 |
 | [Master prompt](docs/master-prompt.md) | Yêu cầu gốc của project (nguyên văn) — đối chiếu phạm vi, quy tắc và quy trình theo phase | — |
-| [Worklog](worklog-overview/) | Tổng kết công việc theo ngày — [2026-09-15](worklog-overview/2026-09-15.md): Phase 0–4 | — |
+| [Worklog](worklog-overview/) | Tổng kết công việc theo ngày — [2026-09-15](worklog-overview/2026-09-15.md): Phase 0–4 · [09-16](worklog-overview/2026-09-16.md): Phase 5 · [09-18](worklog-overview/2026-09-18.md): Phase 6–7 | — |
 
 ## Roadmap
 
@@ -57,7 +59,7 @@ mà không làm xấu guardrail metrics (xem [PRD §8](docs/product-requirements
 | 4 | Baseline (Nearest Driver) | ✅ Done |
 | 5 | Train ML Model | ✅ Done |
 | 6 | Evaluation & Benchmarking | ✅ Done |
-| 7 | Model Serving | ⬜ |
+| 7 | Model Serving | ✅ Done |
 | 8 | PostgreSQL | ⬜ |
 | 9 | FastAPI | ⬜ |
 | 10 | LLM | ⬜ |
@@ -113,6 +115,32 @@ python -m ml.training.train          # Phase 5: train P(accept) → ml/training/
 # Phase 6: chọn policy trên validation, đo một lần trên test; ablation feature
 python -m ml.evaluation.run_evaluation
 python -m ml.evaluation.run_ablations
+
+# Phase 7: xuất artifact phục vụ → ml/models/, và đo latency inference
+python -m ml.inference.export
+python -m ml.inference.benchmark
 ```
+
+Mọi CLI chạy bằng `python -m ...` **từ thư mục gốc repository** — `ml` được import như package top-level
+(architecture ADR-017).
+
+## Xếp hạng một booking
+
+```python
+from ml.inference.predict import rank_drivers
+
+rank_drivers({
+    "booking": {"booking_id": 1, "request_time": "2026-07-20 08:00:00",
+                "pickup_lat": 0.0, "pickup_lon": 0.0, "destination_lat": 0.05, "destination_lon": 0.0,
+                "passenger_type": "individual", "traffic_level": "medium", "weather": "clear"},
+    "candidate_drivers": [
+        {"driver_id": 1, "distance_km": 1.2, "estimated_eta_min": 4.0, "idle_time_min": 10.0,
+         "vehicle_type": "car_4", "rating": 4.7, "acceptance_rate": 0.8,
+         "cancellation_rate": 0.08, "completed_trips": 500},
+    ],
+}, top_k=5)
+```
+
+Trả về Top-K đã sắp giảm dần kèm `score`, `eta` và `reasons` (đóng góp của từng feature, tính deterministic từ model).
 
 Các bước tiếp theo sẽ được bổ sung theo từng phase.

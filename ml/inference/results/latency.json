@@ -1,0 +1,123 @@
+{
+  "experiment": "phase7-inference-latency",
+  "settings": {
+    "repeats": 200,
+    "warmup": 20,
+    "top_k": 5,
+    "candidate_counts": [
+      10,
+      20,
+      50
+    ],
+    "unit": "milliseconds",
+    "process": "single, warm artifact",
+    "padded_candidate_counts": [
+      50
+    ],
+    "padding_note": "sizes above the busiest real booking are reached by repeating candidates"
+  },
+  "machine": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "python": "3.12.10"
+  },
+  "model_version": "1.0.0",
+  "latency_ms": {
+    "10": {
+      "build_view": {
+        "p50": 6.246,
+        "p95": 7.527,
+        "p99": 16.619,
+        "mean": 6.324
+      },
+      "build_features": {
+        "p50": 17.733,
+        "p95": 20.729,
+        "p99": 39.138,
+        "mean": 17.733
+      },
+      "predict": {
+        "p50": 1.881,
+        "p95": 2.328,
+        "p99": 5.029,
+        "mean": 1.946
+      },
+      "explain": {
+        "p50": 3.832,
+        "p95": 5.24,
+        "p99": 11.81,
+        "mean": 3.97
+      },
+      "total": {
+        "p50": 29.779,
+        "p95": 37.119,
+        "p99": 64.946,
+        "mean": 29.973
+      }
+    },
+    "20": {
+      "build_view": {
+        "p50": 6.294,
+        "p95": 7.681,
+        "p99": 18.208,
+        "mean": 6.381
+      },
+      "build_features": {
+        "p50": 17.661,
+        "p95": 22.522,
+        "p99": 35.188,
+        "mean": 17.854
+      },
+      "predict": {
+        "p50": 1.934,
+        "p95": 2.497,
+        "p99": 5.109,
+        "mean": 2.005
+      },
+      "explain": {
+        "p50": 3.814,
+        "p95": 5.155,
+        "p99": 8.755,
+        "mean": 3.892
+      },
+      "total": {
+        "p50": 29.968,
+        "p95": 41.431,
+        "p99": 61.873,
+        "mean": 30.133
+      }
+    },
+    "50": {
+      "build_view": {
+        "p50": 6.377,
+        "p95": 8.25,
+        "p99": 14.206,
+        "mean": 6.455
+      },
+      "build_features": {
+        "p50": 17.761,
+        "p95": 21.022,
+        "p99": 38.403,
+        "mean": 17.994
+      },
+      "predict": {
+        "p50": 1.938,
+        "p95": 2.409,
+        "p99": 4.271,
+        "mean": 1.974
+      },
+      "explain": {
+        "p50": 3.835,
+        "p95": 4.617,
+        "p99": 11.342,
+        "mean": 3.875
+      },
+      "total": {
+        "p50": 30.144,
+        "p95": 36.568,
+        "p99": 60.428,
+        "mean": 30.297
+      }
+    }
+  }
+}
